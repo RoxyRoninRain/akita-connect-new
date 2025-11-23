@@ -243,14 +243,19 @@ export const Profile = () => {
     };
 
     const handleCoverPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        console.log('Cover photo upload triggered');
         const file = e.target.files?.[0];
         if (file) {
+            console.log('File selected:', file.name);
             const reader = new FileReader();
             reader.onloadend = () => {
                 const newCoverPhoto = reader.result as string;
+                console.log('Updating user with cover photo');
                 updateUser(user.id, { coverPhoto: newCoverPhoto });
             };
             reader.readAsDataURL(file);
+        } else {
+            console.log('No file selected');
         }
     };
 
