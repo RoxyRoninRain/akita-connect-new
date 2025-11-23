@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react';
-import { supabase } from '../supabaseClient';
 
 interface ImageUploadProps {
     bucket: string;
@@ -23,27 +22,18 @@ export const ImageUpload = ({ bucket, currentImage, onUpload, className = "", la
             }
 
             const file = event.target.files[0];
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${Math.random()}.${fileExt}`;
-            const filePath = `${fileName}`;
 
             // Create preview immediately
             const objectUrl = URL.createObjectURL(file);
             setPreview(objectUrl);
 
-            const { error: uploadError } = await supabase.storage
-                .from(bucket)
-                .upload(filePath, file);
-
-            if (uploadError) {
-                throw uploadError;
-            }
-
-            const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
-
-            if (data) {
-                onUpload(data.publicUrl);
-            }
+            // Use FileReader to convert to base64 instead of Supabase storage
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64String = reader.result as string;
+                onUpload(base64String);
+            };
+            reader.readAsDataURL(file);
         } catch (error: any) {
             console.error('Error uploading image:', error.message);
             alert('Error uploading image: ' + error.message);
