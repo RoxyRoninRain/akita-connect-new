@@ -1,0 +1,267 @@
+        } catch (error) {
+    console.error("Failed to create user profile", error);
+    // Optional: Delete auth user if profile creation fails?
+    throw error;
+}
+    };
+
+
+const addPost = (content: string, images: string[] = []) => {
+    if (!currentUser) return;
+    const newPost: Post = {
+        id: `p${Date.now()}`,
+        authorId: currentUser.id,
+        content,
+        images,
+        likes: [],
+        comments: [],
+        timestamp: new Date().toISOString()
+    };
+    setPosts([newPost, ...posts]);
+};
+
+const addAkita = async (akitaData: Omit<Akita, 'id'>) => {
+    try {
+        const dbAkitaData = mapAkitaToDb(akitaData);
+        const createdAkita = await akitaApi.create(dbAkitaData);
+        const newAkita = mapAkitaFromDb(createdAkita);
+
+        setAkitas([...akitas, newAkita]);
+
+        // Update owner's dog list locally
+        setUsers(users.map(u => {
+            if (u.id === akitaData.ownerId) {
+                return { ...u, dogs: [...u.dogs, newAkita.id] };
+            }
+            return u;
+        }));
+    } catch (error) {
+        console.error("Failed to add akita", error);
+        throw error;
+    }
+};
+
+const updateAkita = async (id: string, updates: Partial<Akita>) => {
+    try {
+        const dbUpdates = mapAkitaToDb(updates);
+        await akitaApi.update(id, dbUpdates);
+        setAkitas(akitas.map(dog => dog.id === id ? { ...dog, ...updates } : dog));
+    } catch (error) {
+        console.error("Failed to update akita", error);
+        throw error;
+    }
+};
+
+const addLitter = async (litterData: Omit<Litter, 'id'>) => {
+    try {
+        const dbLitterData = mapLitterToDb(litterData);
+        const createdLitter = await litterApi.create(dbLitterData);
+        const newLitter = mapLitterFromDb(createdLitter);
+        setLitters([...litters, newLitter]);
+    } catch (error) {
+        console.error("Failed to add litter", error);
+        throw error;
+    }
+};
+
+const addPuppy = (litterId: string, puppy: any) => {
+    // TODO: Implement API for adding puppies (update litter)
+    setLitters(litters.map(l => {
+        if (l.id === litterId) {
+            return {
+                ...l,
+                puppies: [...l.puppies, { ...puppy, id: `pup${Date.now()}`, litterId }]
+            };
+        }
+        return l;
+    }));
+};
+
+const toggleLike = (postId: string) => {
+    if (!currentUser) return;
+    setPosts(posts.map(post => {
+        if (post.id === postId) {
+            const isLiked = post.likes.includes(currentUser.id);
+            return {
+                ...post,
+                likes: isLiked
+                    ? post.likes.filter(id => id !== currentUser.id)
+                    : [...post.likes, currentUser.id]
+            };
+        }
+        return post;
+    }));
+};
+
+const addComment = (postId: string, content: string) => {
+    if (!currentUser) return;
+    const newComment = {
+        id: `c${Date.now()}`,
+        authorId: currentUser.id,
+        content,
+        timestamp: new Date().toISOString()
+    };
+    setPosts(posts.map(post => {
+        if (post.id === postId) {
+            return {
+                ...post,
+                comments: [...post.comments, newComment]
+            };
+        }
+        return post;
+    }));
+};
+
+const updateUser = async (id: string, updates: Partial<User>) => {
+    try {
+        // TODO: Map updates to DB format
+        // await userApi.update(id, updates);
+        setUsers(users.map(u => u.id === id ? { ...u, ...updates } : u));
+        if (currentUser && currentUser.id === id) {
+            setCurrentUser({ ...currentUser, ...updates });
+        }
+    } catch (error) {
+        console.error("Failed to update user", error);
+    }
+};
+
+const addThreadReply = (threadId: string, content: string) => {
+    if (!currentUser) return;
+    const newReply = {
+        id: `r${Date.now()}`,
+        authorId: currentUser.id,
+        content,
+        timestamp: new Date().toISOString()
+    };
+    setThreads(threads.map(thread => {
+        if (thread.id === threadId) {
+            return {
+                ...thread,
+                replies: [...thread.replies, newReply],
+                lastActive: new Date().toISOString()
+            };
+        }
+        return thread;
+    }));
+};
+
+const addThread = (threadData: Omit<Thread, 'id' | 'replies' | 'views' | 'lastActive'>) => {
+    if (!currentUser) return;
+    const newThread: Thread = {
+        ...threadData,
+        id: `t${Date.now()}`,
+        replies: [],
+        views: 0,
+        lastActive: new Date().toISOString()
+    };
+    setThreads([newThread, ...threads]);
+};
+
+const addEvent = (eventData: Omit<Event, 'id' | 'attendees'>) => {
+    if (!currentUser) return;
+    const newEvent: Event = {
+        ...eventData,
+        id: `e${Date.now()}`,
+        attendees: []
+    };
+    setEvents([...events, newEvent]);
+};
+
+const toggleEventRSVP = (eventId: string) => {
+    if (!currentUser) return;
+    setEvents(events.map(event => {
+        if (event.id === eventId) {
+            const hasRSVPd = event.attendees.includes(currentUser.id);
+            return {
+                ...event,
+                attendees: hasRSVPd
+                    ? event.attendees.filter(id => id !== currentUser.id)
+                    : [...event.attendees, currentUser.id]
+            };
+        }
+        return event;
+    }));
+};
+
+const approveLitter = async (litterId: string, approved: boolean, reason?: string) => {
+    if (!currentUser || currentUser.role !== 'moderator') return;
+
+    try {
+        if (approved) {
+            await litterApi.approve(litterId, currentUser.id);
+        } else {
+            await litterApi.reject(litterId, reason || 'No reason provided');
+        }
+
+        setLitters(litters.map(litter => {
+            if (litter.id === litterId) {
+                return {
+                    ...litter,
+                    approvalStatus: approved ? 'approved' : 'rejected',
+                    approvedBy: currentUser.id,
+                    approvalDate: new Date().toISOString(),
+                    rejectionReason: approved ? undefined : reason
+                };
+            }
+            return litter;
+        }));
+    } catch (error) {
+        console.error("Failed to approve/reject litter", error);
+        throw error;
+    }
+};
+
+const addCategory = (category: string) => {
+    if (!currentUser || currentUser.role !== 'moderator') return;
+    if (!categories.includes(category)) {
+        setCategories([...categories, category]);
+    }
+};
+
+const removeCategory = (category: string) => {
+    if (!currentUser || currentUser.role !== 'moderator') return;
+    setCategories(categories.filter(c => c !== category));
+};
+
+return (
+    <StoreContext.Provider value={{
+        currentUser,
+        users,
+        akitas,
+        litters,
+        posts,
+        threads,
+        events,
+        login,
+        logout,
+        register,
+        addPost,
+        addAkita,
+        updateAkita,
+        addLitter,
+        addPuppy,
+        toggleLike,
+        addComment,
+        updateUser,
+        addThreadReply,
+        addThread,
+        addEvent,
+        toggleEventRSVP,
+        approveLitter,
+        categories,
+        addCategory,
+        removeCategory,
+        loading
+    }}>
+        {children}
+    </StoreContext.Provider>
+);
+};
+
+export const useStore = () => {
+    const context = useContext(StoreContext);
+    if (context === undefined) {
+        throw new Error('useStore must be used within a StoreProvider');
+    }
+    return context;
+};

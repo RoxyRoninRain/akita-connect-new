@@ -1,0 +1,366 @@
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { MapPin, Users, Plus, X, Calendar as CalendarIcon, Search, List } from 'lucide-react';
+import { Calendar } from '../components/Calendar';
+import { useStore } from '../context/StoreContext';
+import { AuthGate } from '../components/AuthGate';
+
+export const Events = () => {
+    const { events, currentUser, addEvent, toggleEventRSVP } = useStore();
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filterType, setFilterType] = useState<string>('all');
+    const [filterDate, setFilterDate] = useState<'all' | 'upcoming' | 'past'>('upcoming');
+    const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
+    const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+    const [currentDate, setCurrentDate] = useState(new Date());
+    const [newEventForm, setNewEventForm] = useState({
+        title: '',
+        description: '',
+        startDate: '',
+        eventType: 'show' as 'show' | 'meetup' | 'seminar' | 'other',
+        location: '',
+        address: ''
+    });
+
+    const handleAddEventClick = () => {
+        setNewEventForm({
+            title: '',
+            description: '',
+            startDate: '',
+            eventType: 'show',
+            location: '',
+            address: ''
+        });
+        setIsAddEventModalOpen(true);
+    };
+
+    const handleEventSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!currentUser) {
+            alert('Please log in to create an event');
+            return;
+        }
+
+        if (!newEventForm.title.trim() || !newEventForm.startDate || !newEventForm.location) {
+            alert('Please fill in all required fields (Title, Date, Location)');
+            return;
+        }
+
+        try {
+            await addEvent({
+                organizerId: currentUser.id,
+                title: newEventForm.title,
+                description: newEventForm.description,
+                startDate: newEventForm.startDate,
+                eventType: newEventForm.eventType,
+                location: newEventForm.location,
+                address: newEventForm.address
+            });
+            setIsAddEventModalOpen(false);
+            // Reset form
+            setNewEventForm({
+                title: '',
+                description: '',
+                startDate: '',
+                eventType: 'show',
+                location: '',
+                address: ''
+            });
+        } catch (error) {
+            console.error('Failed to create event:', error);
+            alert('Failed to create event. Please try again.');
+        }
+    };
+
+    // Filter and sort events
+    const now = new Date();
+    let filteredEvents = events;
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+        filteredEvents = filteredEvents.filter((event: any) =>
+            event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            event.location.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }
+
+    // Filter by type
+    if (filterType !== 'all') {
+        filteredEvents = filteredEvents.filter((event: any) => event.eventType === filterType);
+    }
+
+    // Filter by date
+    if (filterDate === 'upcoming') {
+        filteredEvents = filteredEvents.filter((event: any) => new Date(event.startDate) >= now);
+    } else if (filterDate === 'past') {
+        filteredEvents = filteredEvents.filter((event: any) => new Date(event.startDate) < now);
+    }
+
+    // Sort by date
+    const sortedEvents = [...filteredEvents].sort((a: any, b: any) =>
+        new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+    );
+
+    return (
+        <div className="max-w-5xl mx-auto">
+            {/* Add Event Modal */}
+            {isAddEventModalOpen && (
+                <div className="fixed inset-0 z-50 overflow-y-auto">
+                    <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                        <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+                            <div className="absolute inset-0 bg-gray-500 opacity-75" onClick={() => setIsAddEventModalOpen(false)}></div>
+                        </div>
+                        <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                            <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-lg leading-6 font-medium text-gray-900">Create New Event</h3>
+                                    <button onClick={() => setIsAddEventModalOpen(false)} className="text-gray-400 hover:text-gray-500">
+                                        <X className="h-6 w-6" />
+                                    </button>
+                                </div>
+                                <form onSubmit={handleEventSubmit}>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Event Title *</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={newEventForm.title}
+                                                onChange={(e) => setNewEventForm({ ...newEventForm, title: e.target.value })}
+                                                placeholder="e.g., Regional Specialty Show"
+                                                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm"
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700">Date *</label>
+                                                <input
+                                                    type="date"
+                                                    required
+                                                    value={newEventForm.startDate}
+                                                    onChange={(e) => setNewEventForm({ ...newEventForm, startDate: e.target.value })}
+                                                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700">Type *</label>
+                                                <select
+                                                    required
+                                                    value={newEventForm.eventType}
+                                                    onChange={(e) => setNewEventForm({ ...newEventForm, eventType: e.target.value as any })}
+                                                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm"
+                                                >
+                                                    <option value="show">Show</option>
+                                                    <option value="meetup">Meetup</option>
+                                                    <option value="seminar">Seminar</option>
+                                                    <option value="other">Other</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Location *</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={newEventForm.location}
+                                                onChange={(e) => setNewEventForm({ ...newEventForm, location: e.target.value })}
+                                                placeholder="City, State"
+                                                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Address (Optional)</label>
+                                            <input
+                                                type="text"
+                                                value={newEventForm.address}
+                                                onChange={(e) => setNewEventForm({ ...newEventForm, address: e.target.value })}
+                                                placeholder="Street address"
+                                                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Description</label>
+                                            <textarea
+                                                rows={3}
+                                                value={newEventForm.description}
+                                                onChange={(e) => setNewEventForm({ ...newEventForm, description: e.target.value })}
+                                                placeholder="Event details..."
+                                                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="mt-5 sm:mt-6">
+                                        <button
+                                            type="submit"
+                                            className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-brand-primary text-base font-medium text-white hover:bg-brand-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary sm:text-sm"
+                                        >
+                                            Create Event
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className="mb-6">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                    <h1 className="text-2xl font-bold text-gray-900">Events</h1>
+                    <AuthGate action="Create Events">
+                        <button
+                            onClick={handleAddEventClick}
+                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-brand-primary hover:bg-brand-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary"
+                        >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Event
+                        </button>
+                    </AuthGate>
+                </div>
+                {/* Filters */}
+                <div className="flex flex-col md:flex-row gap-3">
+                    {/* Search Bar */}
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Search events..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:ring-brand-primary focus:border-brand-primary"
+                        />
+                    </div>
+                    {/* Type Filter */}
+                    <select
+                        value={filterType}
+                        onChange={(e) => setFilterType(e.target.value)}
+                        className="px-4 py-2 border border-gray-300 rounded-md focus:ring-brand-primary focus:border-brand-primary"
+                    >
+                        <option value="all">All Types</option>
+                        <option value="show">Shows</option>
+                        <option value="meetup">Meetups</option>
+                        <option value="seminar">Seminars</option>
+                        <option value="other">Other</option>
+                    </select>
+                    {/* Date Filter */}
+                    <select
+                        value={filterDate}
+                        onChange={(e) => setFilterDate(e.target.value as 'all' | 'upcoming' | 'past')}
+                        className="px-4 py-2 border border-gray-300 rounded-md focus:ring-brand-primary focus:border-brand-primary"
+                    >
+                        <option value="all">All Dates</option>
+                        <option value="upcoming">Upcoming</option>
+                        <option value="past">Past</option>
+                    </select>
+                    {/* View Toggle */}
+                    <div className="flex rounded-md shadow-sm">
+                        <button
+                            onClick={() => setViewMode('list')}
+                            className={`px-4 py-2 text-sm font-medium rounded-l-md border ${viewMode === 'list'
+                                ? 'bg-brand-primary text-white border-brand-primary'
+                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                }`}
+                        >
+                            <List className="h-5 w-5" />
+                        </button>
+                        <button
+                            onClick={() => setViewMode('calendar')}
+                            className={`px-4 py-2 text-sm font-medium rounded-r-md border-t border-r border-b ${viewMode === 'calendar'
+                                ? 'bg-brand-primary text-white border-brand-primary'
+                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                }`}
+                        >
+                            <CalendarIcon className="h-5 w-5" />
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {viewMode === 'calendar' ? (
+                <Calendar
+                    events={filteredEvents}
+                    currentDate={currentDate}
+                    onDateChange={setCurrentDate}
+                />
+            ) : (
+                <div className="bg-white shadow rounded-lg overflow-hidden">
+                    <ul className="divide-y divide-gray-200">
+                        {sortedEvents.length > 0 ? (
+                            sortedEvents.map((event: any) => {
+                                const goingCount = event.rsvps?.filter((r: any) => r.status === 'going').length || 0;
+                                const hasRSVPd = currentUser ? event.rsvps?.some((r: any) => r.userId === currentUser.id) : false;
+                                return (
+                                    <li key={event.id} className="p-6 hover:bg-gray-50 transition-colors">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-start space-x-4">
+                                                <div className="flex-shrink-0">
+                                                    <div className="h-12 w-12 rounded-lg bg-brand-light flex flex-col items-center justify-center text-brand-primary border border-brand-primary/20">
+                                                        <span className="text-xs font-bold uppercase">{new Date(event.startDate).toLocaleString('default', { month: 'short' })}</span>
+                                                        <span className="text-lg font-bold">{new Date(event.startDate).getDate()}</span>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div className="flex items-center space-x-2">
+                                                        <Link to={`/events/${event.id}`} className="text-lg font-medium text-gray-900 hover:text-brand-primary">
+                                                            {event.title}
+                                                        </Link>
+                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 capitalize">
+                                                            {event.eventType}
+                                                        </span>
+                                                    </div>
+                                                    {event.description && (
+                                                        <p className="mt-1 text-sm text-gray-600">{event.description}</p>
+                                                    )}
+                                                    <div className="mt-2 flex items-center text-sm text-gray-500 space-x-4">
+                                                        <span className="flex items-center">
+                                                            <MapPin className="h-4 w-4 mr-1" />
+                                                            {event.location}
+                                                        </span>
+                                                        <span className="flex items-center">
+                                                            <Users className="h-4 w-4 mr-1" />
+                                                            {goingCount} Attending
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <AuthGate action="RSVP">
+                                                <button
+                                                    onClick={() => toggleEventRSVP(event.id)}
+                                                    className={`px-4 py-2 border rounded-md text-sm font-medium transition-colors ${hasRSVPd
+                                                        ? 'bg-brand-primary text-white border-brand-primary hover:bg-brand-secondary'
+                                                        : 'border-brand-primary text-brand-primary hover:bg-brand-light'
+                                                        }`}
+                                                >
+                                                    {hasRSVPd ? 'Going' : 'RSVP'}
+                                                </button>
+                                            </AuthGate>
+                                        </div>
+                                    </li>
+                                );
+                            })
+                        ) : (
+                            <li className="p-12 text-center">
+                                <CalendarIcon className="mx-auto h-12 w-12 text-gray-400" />
+                                <h3 className="mt-2 text-sm font-medium text-gray-900">No events yet</h3>
+                                <p className="mt-1 text-sm text-gray-500">Get started by creating an event.</p>
+                                <div className="mt-6">
+                                    <AuthGate action="Create Events">
+                                        <button
+                                            onClick={handleAddEventClick}
+                                            className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand-primary hover:bg-brand-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary"
+                                        >
+                                            <Plus className="h-4 w-4 mr-2" />
+                                            Add Event
+                                        </button>
+                                    </AuthGate>
+                                </div>
+                            </li>
+                        )}
+                    </ul>
+                </div>
+            )}
+        </div>
+    );
+};
