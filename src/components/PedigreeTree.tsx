@@ -71,7 +71,7 @@ export const PedigreeTree = ({ akita }: PedigreeTreeProps) => {
 
                         {/* Dog Info */}
                         <Link
-                            to={`/akita/${dog.id}`}
+                            to={`/akitas/${dog.id}`}
                             className="block hover:text-primary-600 dark:hover:text-primary-400"
                         >
                             <h4 className="font-bold text-base mb-1">{dog.call_name}</h4>

@@ -523,7 +523,7 @@ export const Profile = () => {
                         <div className="absolute inset-0 bg-gradient-to-r from-brand-primary to-brand-secondary opacity-75"></div>
                     )}
                     {isOwnProfile && (
-                        <label className="absolute bottom-2 right-2 cursor-pointer bg-white/90 hover:bg-white px-3 py-1.5 rounded-md shadow-sm text-sm font-medium text-gray-700 inline-flex items-center space-x-2">
+                        <label className="absolute bottom-4 right-4 cursor-pointer bg-brand-primary hover:bg-brand-secondary text-white px-4 py-2 rounded-md shadow-lg text-sm font-medium inline-flex items-center space-x-2 transition-colors">
                             <Upload className="h-4 w-4" />
                             <span>{user.coverPhoto ? 'Change Cover' : 'Upload Cover'}</span>
                             <input type="file" accept="image/*" className="hidden" onChange={handleCoverPhotoUpload} />
