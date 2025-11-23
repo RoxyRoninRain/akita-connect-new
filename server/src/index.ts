@@ -41,11 +41,12 @@ app.get('/', (req: Request, res: Response) => {
     res.send('Akita Connect API is running');
 });
 
-app.get('/api/health', (req: Request, res: Response) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
+// Export app for Vercel
+export default app;
 
-// Start server
-app.listen(port, () => {
-    console.log(`[server]: Server is running at http://localhost:${port}`);
-});
+// Only listen if not running in Vercel (Vercel handles listening)
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(port, () => {
+        console.log(`Server running on port ${port}`);
+    });
+}
