@@ -1,14 +1,13 @@
 import { useState, useRef } from 'react';
 
 interface ImageUploadProps {
-    bucket: string;
     currentImage?: string;
     onUpload: (url: string) => void;
     className?: string;
     label?: string;
 }
 
-export const ImageUpload = ({ bucket, currentImage, onUpload, className = "", label = "Upload Image" }: ImageUploadProps) => {
+export const ImageUpload = ({ currentImage, onUpload, className = "", label = "Upload Image" }: ImageUploadProps) => {
     const [uploading, setUploading] = useState(false);
     const [preview, setPreview] = useState<string | undefined>(currentImage);
     const fileInputRef = useRef<HTMLInputElement>(null);
