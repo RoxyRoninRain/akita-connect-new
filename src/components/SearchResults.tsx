@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Search as SearchIcon, User, Dog, MessageSquare, X } from 'lucide-react';
+import { User, Dog, MessageSquare, X } from 'lucide-react';
 
 interface SearchResultsProps {
     query: string;

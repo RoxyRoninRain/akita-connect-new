@@ -21,6 +21,8 @@ export interface User {
     };
     yearsOfExperience?: number;
     reputation?: number;
+    followers_count?: number;
+    following_count?: number;
 }
 
 export interface HealthRecord {

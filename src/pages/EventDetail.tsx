@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
+
 import { useParams, Link } from 'react-router-dom';
 import { useStore } from '../context/StoreContext';
-import { ArrowLeft, MapPin, Clock, Users, Calendar, MessageSquare } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Users, Calendar } from 'lucide-react';
 
 export const EventDetail = () => {
     const { id } = useParams<{ id: string }>();
     const { events, users, currentUser, toggleEventRSVP } = useStore();
-    const [comment, setComment] = useState('');
 
     const event = events.find(e => e.id === id);
     const organizer = event ? users.find(u => u.id === event.organizerId) : null;

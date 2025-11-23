@@ -201,52 +201,7 @@ export const AkitaDetail = () => {
         }
     };
 
-    const PedigreeNode = ({ akitaId, generation, type }: { akitaId?: string, generation: number, type?: 'sire' | 'dam' }) => {
-        const akita = akitas.find((d: any) => d.id === akitaId);
-        const isOwner = currentUser?.id === dog.ownerId;
 
-        if (!akita) {
-            return (
-                <button
-                    onClick={() => isOwner && type ? handleAddAncestorClick(type) : alert('Cannot add ancestor - not the owner')}
-                    className={clsx(
-                        "border-2 border-dashed border-gray-300 rounded-lg p-2 flex items-center justify-center text-gray-400 text-xs text-center bg-gray-50 w-full transition-colors",
-                        isOwner ? "hover:bg-gray-100 cursor-pointer" : "cursor-not-allowed",
-                        generation === 0 ? "h-32" : generation === 1 ? "h-24" : "h-16"
-                    )}
-                    disabled={!isOwner}
-                >
-                    <div className="flex flex-col items-center">
-                        <Plus className="h-4 w-4 mb-1" />
-                        <span>{isOwner ? 'Add Ancestor' : 'No Data'}</span>
-                    </div>
-                </button>
-            );
-        }
-
-        return (
-            <Link to={`/akitas/${akita.id}`} className={clsx(
-                "block bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden",
-                generation === 0 ? "h-32" : generation === 1 ? "h-24" : "h-16"
-            )}>
-                <div className="flex h-full">
-                    {akita.images[0] && (
-                        <div className="w-1/3 h-full">
-                            <img src={akita.images[0]} alt={akita.callName} className="w-full h-full object-cover" />
-                        </div>
-                    )}
-                    <div className={clsx("p-2 flex flex-col justify-center", akita.images[0] ? "w-2/3" : "w-full")}>
-                        <p className={clsx("font-medium text-gray-900 truncate", generation === 2 ? "text-xs" : "text-sm")}>
-                            {akita.registeredName}
-                        </p>
-                        {generation < 2 && akita.titles.length > 0 && (
-                            <p className="text-xs text-gray-500">{akita.titles.join(', ')}</p>
-                        )}
-                    </div>
-                </div>
-            </Link>
-        );
-    };
 
     return (
         <div className="max-w-5xl mx-auto">
@@ -498,6 +453,26 @@ export const AkitaDetail = () => {
 
                 {activeTab === 'pedigree' && (
                     <div className="space-y-6">
+                        {/* Pedigree Actions */}
+                        {currentUser?.id === dog.ownerId && (
+                            <div className="flex justify-end space-x-4">
+                                <button
+                                    onClick={() => handleAddAncestorClick('sire')}
+                                    className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                                >
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Add Sire
+                                </button>
+                                <button
+                                    onClick={() => handleAddAncestorClick('dam')}
+                                    className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                                >
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Add Dam
+                                </button>
+                            </div>
+                        )}
+
                         {/* Pedigree Image Upload */}
                         {currentUser?.id === dog.ownerId && (
                             <div className="bg-white shadow rounded-lg p-4">

@@ -112,7 +112,7 @@ export const HealthRecordForm = ({ isOpen, onClose, onSubmit, initialData, mode 
                                     <ImageUpload
                                         bucket="akitas"
                                         onUpload={handleImageUpload}
-                                        existingUrl={formData.certificateImage}
+                                        currentImage={formData.certificateImage}
                                     />
                                     {formData.certificateImage && (
                                         <div className="mt-2">
