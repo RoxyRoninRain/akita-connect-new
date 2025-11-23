@@ -42,7 +42,7 @@ export const Navbar = () => {
                 <div className="flex justify-between h-16">
                     <div className="flex">
                         <Link to="/" className="flex-shrink-0 flex items-center space-x-2">
-                            <img src="/akita-logo.png" alt="Akita Connect Logo" className="h-12 w-auto" />
+                            <img src="/akita-logo.png" alt="Akita Connect Logo" className="h-12 w-12 rounded-full" />
                             <div>
                                 <span className="text-2xl font-semibold text-brand-primary tracking-tight">Akita</span>
                                 <span className="text-2xl font-light text-brand-secondary">Connect</span>
