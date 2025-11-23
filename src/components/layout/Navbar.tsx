@@ -42,11 +42,7 @@ export const Navbar = () => {
                 <div className="flex justify-between h-16">
                     <div className="flex">
                         <Link to="/" className="flex-shrink-0 flex items-center space-x-2">
-                            <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                {/* Simple Akita head silhouette */}
-                                <path d="M30 80 L25 70 L22 55 L25 40 L30 30 L35 22 L38 15 L42 20 L45 30 L50 20 L55 15 L58 20 L62 22 L65 30 L70 40 L75 55 L78 70 L73 80 L65 85 L50 88 L35 85 Z"
-                                    fill="#0891B2" />
-                            </svg>
+                            <img src="/akita-logo.png" alt="Akita Connect Logo" className="h-12 w-auto" />
                             <div>
                                 <span className="text-2xl font-semibold text-brand-primary tracking-tight">Akita</span>
                                 <span className="text-2xl font-light text-brand-secondary">Connect</span>
