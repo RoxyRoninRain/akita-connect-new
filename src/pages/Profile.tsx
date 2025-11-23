@@ -315,7 +315,6 @@ export const Profile = () => {
                                     <div className="space-y-4">
                                         <div className="flex justify-center">
                                             <ImageUpload
-                                                bucket="avatars"
                                                 currentImage={editForm.avatar}
                                                 onUpload={(url) => setEditForm({ ...editForm, avatar: url })}
                                                 label="Upload Avatar"
@@ -394,7 +393,6 @@ export const Profile = () => {
                                     <div className="space-y-4">
                                         <div className="flex justify-center">
                                             <ImageUpload
-                                                bucket="akitas"
                                                 onUpload={(url) => setAddAkitaForm({ ...addAkitaForm, images: [url] })}
                                                 label="Upload Photo"
                                             />
@@ -461,7 +459,6 @@ export const Profile = () => {
                                     <div className="space-y-4">
                                         <div className="flex justify-center">
                                             <ImageUpload
-                                                bucket="litters"
                                                 onUpload={(url) => setAddLitterForm({ ...addLitterForm, images: [url] })}
                                                 label="Upload Photo"
                                             />

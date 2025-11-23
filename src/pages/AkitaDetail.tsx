@@ -231,7 +231,6 @@ export const AkitaDetail = () => {
                                     <div className="space-y-4">
                                         <div className="flex justify-center">
                                             <ImageUpload
-                                                bucket="akitas"
                                                 currentImage={editForm.images[0]}
                                                 onUpload={(url) => setEditForm({ ...editForm, images: [url, ...editForm.images] })}
                                                 label="Update Profile Photo"

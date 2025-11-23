@@ -110,7 +110,6 @@ export const HealthRecordForm = ({ isOpen, onClose, onSubmit, initialData, mode 
                                         Certificate Image (Optional)
                                     </label>
                                     <ImageUpload
-                                        bucket="akitas"
                                         onUpload={handleImageUpload}
                                         currentImage={formData.certificateImage}
                                     />
