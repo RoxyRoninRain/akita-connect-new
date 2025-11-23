@@ -8,6 +8,10 @@ const router = Router();
 router.get('/', async (req: Request, res: Response) => {
     const userClient = getSupabase(req.headers.authorization);
     const adminClient = supabase; // Use admin for complex joins if needed, or just standard client
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
 
     try {
         // Get current user for "has_liked" check
@@ -24,7 +28,8 @@ router.get('/', async (req: Request, res: Response) => {
                 author:profiles!threads_author_id_fkey(id, name, avatar, reputation)
             `)
             .order('is_pinned', { ascending: false })
-            .order('last_active', { ascending: false });
+            .order('last_active', { ascending: false })
+            .range(from, to);
 
         if (error) {
             // If table doesn't exist, return empty array instead of 500
@@ -171,7 +176,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 // POST /api/threads - Create a new thread
 router.post('/', async (req: Request, res: Response) => {
     const userClient = getSupabase(req.headers.authorization);
-    const { author_id, title, content, category, tags } = req.body;
+    const { author_id, title, content, category, tags, images } = req.body;
 
     try {
         const { data: { user }, error: authError } = await userClient.auth.getUser();
@@ -184,7 +189,7 @@ router.post('/', async (req: Request, res: Response) => {
 
         const { data, error } = await userClient
             .from('threads')
-            .insert([{ author_id, title, content, category, tags }])
+            .insert([{ author_id, title, content, category, tags, images: images || [] }])
             .select()
             .single();
 
@@ -193,6 +198,48 @@ router.post('/', async (req: Request, res: Response) => {
         res.status(201).json(data);
     } catch (error: any) {
         console.error('Error in thread creation endpoint:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// POST /api/threads/:id/reply - Add a reply to a thread
+router.post('/:id/reply', async (req: Request, res: Response) => {
+    const userClient = getSupabase(req.headers.authorization);
+    const { id } = req.params;
+    const { author_id, content, images } = req.body;
+
+    try {
+        const { data: { user }, error: authError } = await userClient.auth.getUser();
+        if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
+
+        // Verify author_id matches authenticated user
+        if (author_id !== user.id) {
+            return res.status(403).json({ error: 'Forbidden' });
+        }
+
+        // Create the comment/reply
+        const { data, error } = await userClient
+            .from('comments')
+            .insert([{
+                thread_id: id,
+                author_id,
+                content,
+                images: images || []
+            }])
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        // Update thread's last_active timestamp
+        await userClient
+            .from('threads')
+            .update({ last_active: new Date().toISOString() })
+            .eq('id', id);
+
+        res.status(201).json(data);
+    } catch (error: any) {
+        console.error('Error in thread reply endpoint:', error);
         res.status(500).json({ error: error.message });
     }
 });

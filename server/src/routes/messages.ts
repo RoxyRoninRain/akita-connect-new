@@ -290,7 +290,7 @@ router.post('/:id/messages', async (req: Request, res: Response) => {
     const adminClient = supabase;
     const userClient = getSupabase(req.headers.authorization);
     const { id } = req.params;
-    const { content } = req.body;
+    const { content, attachments } = req.body;
 
     if (!content || content.trim() === '') {
         return res.status(400).json({ error: 'Message content is required' });
@@ -321,7 +321,8 @@ router.post('/:id/messages', async (req: Request, res: Response) => {
             .insert([{
                 conversation_id: id,
                 sender_id: currentUserId,
-                content: content.trim()
+                content: content.trim(),
+                attachments: attachments || []
             }])
             .select(`
                 id,
