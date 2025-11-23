@@ -23,6 +23,7 @@ export interface User {
     reputation?: number;
     followers_count?: number;
     following_count?: number;
+    coverPhoto?: string;
 }
 
 export interface HealthRecord {

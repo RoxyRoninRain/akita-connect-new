@@ -242,6 +242,18 @@ export const Profile = () => {
         }
     };
 
+    const handleCoverPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const newCoverPhoto = reader.result as string;
+                updateUser(user.id, { coverPhoto: newCoverPhoto });
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     const handleCommentSubmit = (e: React.FormEvent, postId: string) => {
         e.preventDefault();
         if (commentContent.trim()) {
@@ -504,8 +516,19 @@ export const Profile = () => {
 
             {/* Header */}
             <div className="bg-white rounded-lg shadow overflow-hidden mb-6">
-                <div className="h-48 bg-brand-primary/10 relative">
-                    <div className="absolute inset-0 bg-gradient-to-r from-brand-primary to-brand-secondary opacity-75"></div>
+                <div className="h-48 relative bg-brand-primary/10 overflow-hidden">
+                    {user.coverPhoto ? (
+                        <img src={user.coverPhoto} alt="Cover" className="w-full h-full object-cover" />
+                    ) : (
+                        <div className="absolute inset-0 bg-gradient-to-r from-brand-primary to-brand-secondary opacity-75"></div>
+                    )}
+                    {isOwnProfile && (
+                        <label className="absolute bottom-2 right-2 cursor-pointer bg-white/90 hover:bg-white px-3 py-1.5 rounded-md shadow-sm text-sm font-medium text-gray-700 inline-flex items-center space-x-2">
+                            <Upload className="h-4 w-4" />
+                            <span>{user.coverPhoto ? 'Change Cover' : 'Upload Cover'}</span>
+                            <input type="file" accept="image/*" className="hidden" onChange={handleCoverPhotoUpload} />
+                        </label>
+                    )}
                 </div>
                 <div className="relative px-4 sm:px-6 lg:px-8 pb-6">
                     <div className="-mt-16 flex items-end space-x-5">
