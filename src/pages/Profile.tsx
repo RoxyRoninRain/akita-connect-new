@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../context/StoreContext';
 import { MapPin, Calendar, Globe, Shield, Award, ChevronDown, ChevronUp, X, Upload, Plus, Heart, MessageSquare, Share2, Instagram, Facebook, Twitter, UserPlus, UserMinus } from 'lucide-react';
@@ -65,6 +65,7 @@ export const Profile = () => {
     const [activeCommentPostId, setActiveCommentPostId] = useState<string | null>(null);
     const [commentContent, setCommentContent] = useState('');
     const [copiedPostId, setCopiedPostId] = useState<string | null>(null);
+    const coverPhotoInputRef = useRef<HTMLInputElement>(null);
 
     // Following state
     const [isFollowing, setIsFollowing] = useState(false);
@@ -528,11 +529,22 @@ export const Profile = () => {
                         <div className="absolute inset-0 bg-gradient-to-r from-brand-primary to-brand-secondary opacity-75"></div>
                     )}
                     {isOwnProfile && (
-                        <label className="absolute bottom-4 right-4 cursor-pointer bg-brand-primary hover:bg-brand-secondary text-white px-4 py-2 rounded-md shadow-lg text-sm font-medium inline-flex items-center space-x-2 transition-colors">
-                            <Upload className="h-4 w-4" />
-                            <span>{user.coverPhoto ? 'Change Cover' : 'Upload Cover'}</span>
-                            <input type="file" accept="image/*" className="hidden" onChange={handleCoverPhotoUpload} />
-                        </label>
+                        <>
+                            <button
+                                onClick={() => coverPhotoInputRef.current?.click()}
+                                className="absolute bottom-4 right-4 z-10 cursor-pointer bg-brand-primary hover:bg-brand-secondary text-white px-4 py-2 rounded-md shadow-lg text-sm font-medium inline-flex items-center space-x-2 transition-colors"
+                            >
+                                <Upload className="h-4 w-4" />
+                                <span>{user.coverPhoto ? 'Change Cover' : 'Upload Cover'}</span>
+                            </button>
+                            <input
+                                ref={coverPhotoInputRef}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleCoverPhotoUpload}
+                            />
+                        </>
                     )}
                 </div>
                 <div className="relative px-4 sm:px-6 lg:px-8 pb-6">
