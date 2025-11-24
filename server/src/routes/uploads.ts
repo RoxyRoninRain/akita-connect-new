@@ -1,0 +1,243 @@
+import { Router, Request, Response } from 'express';
+import { getSupabase, supabase } from '../db';
+
+const router = Router();
+
+// POST /api/uploads/avatar - Upload user avatar
+router.post('/avatar', async (req: Request, res: Response) => {
+    const userClient = getSupabase(req.headers.authorization);
+
+    try {
+        // Get current user
+        const { data: { user }, error: authError } = await userClient.auth.getUser();
+        if (authError || !user) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        // Check if file data is provided in body (base64)
+        const { file, fileName, contentType } = req.body;
+        if (!file || !fileName) {
+            return res.status(400).json({ error: 'File data and fileName required' });
+        }
+
+        // Convert base64 to buffer
+        const fileBuffer = Buffer.from(file, 'base64');
+
+        // Upload to Supabase Storage
+        const filePath = `${user.id}/${Date.now()}-${fileName}`;
+        const { data, error } = await supabase.storage
+            .from('avatars')
+            .upload(filePath, fileBuffer, {
+                contentType: contentType || 'image/jpeg',
+                upsert: true
+            });
+
+        if (error) {
+            console.error('Upload error:', error);
+            return res.status(500).json({ error: error.message });
+        }
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(filePath);
+
+        res.json({ url: publicUrl, path: data.path });
+    } catch (error: any) {
+        console.error('Error uploading avatar:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// POST /api/uploads/post-image - Upload post image
+router.post('/post-image', async (req: Request, res: Response) => {
+    const userClient = getSupabase(req.headers.authorization);
+
+    try {
+        // Get current user
+        const { data: { user }, error: authError } = await userClient.auth.getUser();
+        if (authError || !user) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        const { file, fileName, contentType } = req.body;
+        if (!file || !fileName) {
+            return res.status(400).json({ error: 'File data and fileName required' });
+        }
+
+        // Convert base64 to buffer
+        const fileBuffer = Buffer.from(file, 'base64');
+
+        // Upload to Supabase Storage
+        const filePath = `${user.id}/${Date.now()}-${fileName}`;
+        const { data, error } = await supabase.storage
+            .from('posts')
+            .upload(filePath, fileBuffer, {
+                contentType: contentType || 'image/jpeg'
+            });
+
+        if (error) {
+            console.error('Upload error:', error);
+            return res.status(500).json({ error: error.message });
+        }
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+            .from('posts')
+            .getPublicUrl(filePath);
+
+        res.json({ url: publicUrl, path: data.path });
+    } catch (error: any) {
+        console.error('Error uploading post image:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// DELETE /api/uploads/post-image/:path - Delete post image
+router.delete('/post-image/:userId/:filename', async (req: Request, res: Response) => {
+    const userClient = getSupabase(req.headers.authorization);
+
+    try {
+        //Get current user
+        const { data: { user }, error: authError } = await userClient.auth.getUser();
+        if (authError || !user) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        const { userId, filename } = req.params;
+        const filePath = `${userId}/${filename}`;
+
+        // Delete from storage
+        const { error } = await supabase.storage
+            .from('posts')
+            .remove([filePath]);
+
+        if (error) {
+            return res.status(500).json({ error: error.message });
+        }
+
+        res.json({ success: true });
+    } catch (error: any) {
+        console.error('Error deleting image:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// POST /api/uploads/thread-image - Upload thread/reply image
+router.post('/thread-image', async (req: Request, res: Response) => {
+    const userClient = getSupabase(req.headers.authorization);
+
+    try {
+        const { data: { user }, error: authError } = await userClient.auth.getUser();
+        if (authError || !user) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        const { file, fileName, contentType } = req.body;
+        if (!file || !fileName) {
+            return res.status(400).json({ error: 'File data and fileName required' });
+        }
+
+        const fileBuffer = Buffer.from(file, 'base64');
+        const filePath = `${user.id}/${Date.now()}-${fileName}`;
+
+        const { data, error } = await supabase.storage
+            .from('threads')
+            .upload(filePath, fileBuffer, {
+                contentType: contentType || 'image/jpeg'
+            });
+
+        if (error) {
+            return res.status(500).json({ error: error.message });
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+            .from('threads')
+            .getPublicUrl(filePath);
+
+        res.json({ url: publicUrl, path: data.path });
+    } catch (error: any) {
+        console.error('Error uploading thread image:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// POST /api/uploads/message-attachment - Upload message attachment
+router.post('/message-attachment', async (req: Request, res: Response) => {
+    const userClient = getSupabase(req.headers.authorization);
+
+    try {
+        const { data: { user }, error: authError } = await userClient.auth.getUser();
+        if (authError || !user) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        const { file, fileName, contentType } = req.body;
+        if (!file || !fileName) {
+            return res.status(400).json({ error: 'File data and fileName required' });
+        }
+
+        const fileBuffer = Buffer.from(file, 'base64');
+        const filePath = `${user.id}/${Date.now()}-${fileName}`;
+
+        const { data, error } = await supabase.storage
+            .from('messages')
+            .upload(filePath, fileBuffer, {
+                contentType: contentType || 'image/jpeg'
+            });
+
+        if (error) {
+            return res.status(500).json({ error: error.message });
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+            .from('messages')
+            .getPublicUrl(filePath);
+
+        res.json({ url: publicUrl, path: data.path });
+    } catch (error: any) {
+        console.error('Error uploading message attachment:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// POST /api/uploads/akita-image - Upload akita image
+router.post('/akita-image', async (req: Request, res: Response) => {
+    const userClient = getSupabase(req.headers.authorization);
+
+    try {
+        const { data: { user }, error: authError } = await userClient.auth.getUser();
+        if (authError || !user) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        const { file, fileName, contentType } = req.body;
+        if (!file || !fileName) {
+            return res.status(400).json({ error: 'File data and fileName required' });
+        }
+
+        const fileBuffer = Buffer.from(file, 'base64');
+        const filePath = `${user.id}/${Date.now()}-${fileName}`;
+
+        const { data, error } = await supabase.storage
+            .from('akitas')
+            .upload(filePath, fileBuffer, {
+                contentType: contentType || 'image/jpeg'
+            });
+
+        if (error) {
+            return res.status(500).json({ error: error.message });
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+            .from('akitas')
+            .getPublicUrl(filePath);
+
+        res.json({ url: publicUrl, path: data.path });
+    } catch (error: any) {
+        console.error('Error uploading akita image:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+export default router;

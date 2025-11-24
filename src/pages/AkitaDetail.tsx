@@ -109,10 +109,10 @@ export const AkitaDetail = () => {
         setIsAddAncestorModalOpen(true);
     };
 
-    const handleAncestorSubmit = (e: React.FormEvent) => {
+    const handleAncestorSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         // Create new Akita for ancestor
-        const newAncestor = {
+        const newAncestorData = {
             registeredName: ancestorForm.registeredName,
             callName: ancestorForm.callName,
             registrationNumber: ancestorForm.registrationNumber,
@@ -126,21 +126,23 @@ export const AkitaDetail = () => {
             images: []
         };
 
-        // Add ancestor to store
-        addAkita(newAncestor);
+        try {
+            // Add ancestor to store and get the created object with real ID
+            const createdAncestor = await addAkita(newAncestorData);
 
-        // Update current dog's parent reference
-        // Note: We need to get the new ancestor's ID after creation
-        // For now, we'll use a timestamp-based ID prediction
-        const newAncestorId = `d${Date.now()}`;
+            if (createdAncestor) {
+                if (ancestorType === 'sire') {
+                    updateAkita(dog.id, { sireId: createdAncestor.id });
+                } else {
+                    updateAkita(dog.id, { damId: createdAncestor.id });
+                }
+            }
 
-        if (ancestorType === 'sire') {
-            updateAkita(dog.id, { sireId: newAncestorId });
-        } else {
-            updateAkita(dog.id, { damId: newAncestorId });
+            setIsAddAncestorModalOpen(false);
+        } catch (error) {
+            console.error("Failed to add ancestor:", error);
+            alert("Failed to add ancestor. Please try again.");
         }
-
-        setIsAddAncestorModalOpen(false);
     };
 
     const handlePedigreeImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -1,8 +1,8 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import type { User, Akita, Litter, Post, Thread, Event } from '../types';
+import type { User, Akita, Litter, Post, Thread, Event, Reply, Notification, Puppy } from '../types';
 import { MOCK_POSTS, MOCK_THREADS } from './mockData';
-import { akitaApi, userApi, litterApi, threadApi, postApi, eventApi } from '../api/client';
+import { akitaApi, userApi, litterApi, threadApi, postApi, eventApi, notificationsApi } from '../api/client';
 import { mapAkitaFromDb, mapUserFromDb, mapLitterFromDb, mapAkitaToDb, mapLitterToDb, mapUserToDb, mapEventFromDb, mapEventToDb } from '../utils/mappers';
 import { supabase } from '../supabaseClient';
 
@@ -22,16 +22,16 @@ interface StoreContextType {
 
     // Data Actions
     addPost: (content: string, images?: string[]) => void;
-    addAkita: (akita: Omit<Akita, 'id'>) => Promise<void>;
+    addAkita: (akita: Omit<Akita, 'id'>) => Promise<Akita | undefined>;
     updateAkita: (id: string, updates: Partial<Akita>) => Promise<void>;
     addLitter: (litter: Omit<Litter, 'id'>) => Promise<void>;
-    addPuppy: (litterId: string, puppy: any) => void;
+    addPuppy: (litterId: string, puppy: Omit<Puppy, 'id' | 'litterId'>) => void;
     addPuppyWeight: (litterId: string, puppyId: string, weightData: { date: string, weight: number }) => Promise<void>;
     toggleLike: (postId: string) => void;
     addComment: (postId: string, content: string) => void;
     updateUser: (id: string, updates: Partial<User>) => Promise<void>;
-    addThreadReply: (threadId: string, content: string) => void;
-    addThread: (thread: Omit<Thread, 'id' | 'replies' | 'views' | 'lastActive' | 'likesCount' | 'userHasLiked' | 'isPinned'>) => void;
+    addThreadReply: (threadId: string, content: string, images?: string[]) => void;
+    addThread: (thread: Omit<Thread, 'id' | 'replies' | 'views' | 'lastActive' | 'likesCount' | 'userHasLiked' | 'isPinned'> & { images?: string[] }) => void;
     toggleThreadLike: (threadId: string) => void;
     toggleThreadPin: (threadId: string) => void;
     addEvent: (event: Omit<Event, 'id' | 'attendees'>) => void;
@@ -41,6 +41,13 @@ interface StoreContextType {
     addCategory: (category: string) => void;
     removeCategory: (category: string) => void;
     loading: boolean;
+
+    // Notifications
+    notifications: Notification[];
+    unreadCount: number;
+    markAsRead: (id: string) => void;
+    markAllAsRead: () => void;
+    deleteNotification: (id: string) => void;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -53,6 +60,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     const [posts, setPosts] = useState<Post[]>(MOCK_POSTS);
     const [threads, setThreads] = useState<Thread[]>(MOCK_THREADS);
     const [events, setEvents] = useState<Event[]>([]);
+    const [notifications, setNotifications] = useState<Notification[]>([]);
     const [categories, setCategories] = useState<string[]>(['General', 'Health', 'Training', 'Breeding', 'Show Ring']);
     const [loading, setLoading] = useState(true);
 
@@ -76,7 +84,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
                 const mappedLitters = dbLitters.map(mapLitterFromDb);
 
                 // Map users and populate dogs array
-                const mappedUsers = dbUsers.map((u: any) => {
+                const mappedUsers = dbUsers.map((u: Record<string, any>) => {
                     const user = mapUserFromDb(u);
                     user.dogs = mappedAkitas
                         .filter((a: Akita) => a.ownerId === user.id)
@@ -248,7 +256,8 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
 
             console.log('✅ Registration successful:', authData.user.email);
         } catch (error) {
-            console.error("Failed to add post", error);
+            console.error("Failed to register user", error);
+            throw error;
         }
     };
 
@@ -293,6 +302,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
                 }
                 return u;
             }));
+            return newAkita;
         } catch (error) {
             console.error("Failed to add akita", error);
             throw error;
@@ -322,7 +332,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    const addPuppy = async (litterId: string, puppy: any) => {
+    const addPuppy = async (litterId: string, puppy: Omit<Puppy, 'id' | 'litterId'>) => {
         try {
             const litter = litters.find(l => l.id === litterId);
             if (!litter) throw new Error("Litter not found");
@@ -432,19 +442,21 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    const addThreadReply = async (threadId: string, content: string) => {
+    const addThreadReply = async (threadId: string, content: string, images?: string[]) => {
         if (!currentUser) return;
         try {
             const newReply = await threadApi.reply(threadId, {
                 author_id: currentUser.id,
-                content
+                content,
+                images
             });
 
-            const mappedReply = {
+            const mappedReply: Reply = {
                 id: newReply.id,
                 authorId: newReply.author_id,
                 content: newReply.content,
-                timestamp: newReply.created_at
+                timestamp: newReply.created_at,
+                images: newReply.images || []
             };
 
             setThreads(threads.map((thread: Thread) => {
@@ -462,7 +474,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    const addThread = async (threadData: Omit<Thread, 'id' | 'replies' | 'views' | 'lastActive' | 'likesCount' | 'userHasLiked' | 'isPinned'>) => {
+    const addThread = async (threadData: Omit<Thread, 'id' | 'replies' | 'views' | 'lastActive' | 'likesCount' | 'userHasLiked' | 'isPinned'> & { images?: string[] }) => {
         if (!currentUser) return;
         try {
             const newThread = await threadApi.create({
@@ -470,7 +482,8 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
                 category: threadData.category,
                 title: threadData.title,
                 content: threadData.content,
-                tags: threadData.tags
+                tags: threadData.tags,
+                images: threadData.images || []
             });
 
             const mappedThread: Thread = {
@@ -485,7 +498,8 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
                 tags: newThread.tags || [],
                 isPinned: newThread.is_pinned || false,
                 likesCount: 0,
-                userHasLiked: false
+                userHasLiked: false,
+                images: newThread.images || []
             };
 
             setThreads([mappedThread, ...threads]);
@@ -633,6 +647,40 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         setCategories(categories.filter((c: string) => c !== category));
     };
 
+    const markAsRead = async (id: string) => {
+        if (!currentUser) return;
+        try {
+            await notificationsApi.markAsRead(id);
+            setNotifications(notifications.map(n =>
+                n.id === id ? { ...n, read: true } : n
+            ));
+        } catch (error) {
+            console.error("Failed to mark notification as read", error);
+        }
+    };
+
+    const markAllAsRead = async () => {
+        if (!currentUser) return;
+        try {
+            await notificationsApi.markAllAsRead(currentUser.id);
+            setNotifications(notifications.map(n => ({ ...n, read: true })));
+        } catch (error) {
+            console.error("Failed to mark all notifications as read", error);
+        }
+    };
+
+    const deleteNotification = async (id: string) => {
+        if (!currentUser) return;
+        try {
+            await notificationsApi.delete(id);
+            setNotifications(notifications.filter(n => n.id !== id));
+        } catch (error) {
+            console.error("Failed to delete notification", error);
+        }
+    };
+
+    const unreadCount = notifications.filter(n => !n.read).length;
+
     return (
         <StoreContext.Provider value={{
             currentUser,
@@ -664,7 +712,12 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
             categories,
             addCategory,
             removeCategory,
-            loading
+            loading,
+            notifications,
+            unreadCount,
+            markAsRead,
+            markAllAsRead,
+            deleteNotification
         }}>
             {children}
         </StoreContext.Provider>

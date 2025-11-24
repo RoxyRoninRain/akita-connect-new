@@ -3,7 +3,7 @@ import { supabase } from '../db';
 
 const router = Router();
 
-// Search across users, akitas, and posts
+// Search across users, akitas, posts, and threads
 router.get('/', async (req, res) => {
     try {
         const { q } = req.query;
@@ -48,6 +48,25 @@ router.get('/', async (req, res) => {
 
         if (postsError) throw postsError;
 
+        // Search threads
+        const { data: threads, error: threadsError } = await supabase
+            .from('threads')
+            .select(`
+                id,
+                title,
+                content,
+                category,
+                tags,
+                created_at,
+                author_id,
+                profiles (name, avatar)
+            `)
+            .or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%`)
+            .order('created_at', { ascending: false })
+            .limit(5);
+
+        if (threadsError) throw threadsError;
+
         // Transform posts to include author info at top level
         const transformedPosts = posts?.map((post: any) => ({
             ...post,
@@ -55,10 +74,18 @@ router.get('/', async (req, res) => {
             author_avatar: post.profiles?.avatar
         })) || [];
 
+        // Transform threads to include author info
+        const transformedThreads = threads?.map((thread: any) => ({
+            ...thread,
+            author_name: thread.profiles?.name,
+            author_avatar: thread.profiles?.avatar
+        })) || [];
+
         res.json({
             users: users || [],
             akitas: akitas || [],
-            posts: transformedPosts
+            posts: transformedPosts,
+            threads: transformedThreads
         });
     } catch (error: any) {
         console.error('Search error:', error);

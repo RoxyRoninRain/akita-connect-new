@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../context/StoreContext';
-import { MapPin, Calendar, Globe, Shield, Award, ChevronDown, ChevronUp, X, Upload, Plus, Heart, MessageSquare, Share2, Instagram, Facebook, Twitter, UserPlus, UserMinus } from 'lucide-react';
+import { MapPin, Calendar, Globe, Shield, Award, ChevronDown, ChevronUp, X, Upload, Plus, Heart, MessageSquare, Share2, Instagram, Facebook, Twitter } from 'lucide-react';
 import { Lightbox } from '../components/common/Lightbox';
 import { CreatePost } from '../components/feed/CreatePost';
 import { ImageUpload } from '../components/ImageUpload';
+import { FollowButton } from '../components/common/FollowButton';
+import { UserListModal } from '../components/profile/UserListModal';
 import clsx from 'clsx';
 
 export const Profile = () => {
@@ -71,22 +73,19 @@ export const Profile = () => {
     const [isFollowing, setIsFollowing] = useState(false);
     const [followersCount, setFollowersCount] = useState(0);
     const [followingCount, setFollowingCount] = useState(0);
-    const [followLoading, setFollowLoading] = useState(false);
+
+    // User List Modal State
+    const [userListModalOpen, setUserListModalOpen] = useState(false);
+    const [userListModalType, setUserListModalType] = useState<'followers' | 'following'>('followers');
 
     // If no ID is provided, show current user's profile
     const profileId = id || currentUser?.id;
     const user = users.find(u => u.id === profileId);
 
-    if (!user) {
-        return <div className="text-center py-12">User not found</div>;
-    }
-
-    const userDogs = akitas.filter(dog => dog.ownerId === user.id);
-    const userLitters = litters.filter(litter => litter.breederId === user.id);
-    const userPosts = posts.filter(post => post.authorId === user.id);
-
     // Check if current user is following this profile
     useEffect(() => {
+        if (!user) return;
+
         const checkFollowing = async () => {
             if (currentUser && user.id !== currentUser.id) {
                 try {
@@ -101,35 +100,20 @@ export const Profile = () => {
         checkFollowing();
         setFollowersCount(user.followers_count || 0);
         setFollowingCount(user.following_count || 0);
-    }, [user.id, currentUser]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user?.id, currentUser]);
 
-    const handleFollowToggle = async () => {
-        if (!currentUser || user.id === currentUser.id) return;
+    if (!user) {
+        return <div className="text-center py-12">User not found</div>;
+    }
 
-        setFollowLoading(true);
-        try {
-            if (isFollowing) {
-                // Unfollow
-                await fetch(`http://localhost:3000/api/follows/${user.id}?followerId=${currentUser.id}`, {
-                    method: 'DELETE'
-                });
-                setIsFollowing(false);
-                setFollowersCount(prev => Math.max(0, prev - 1));
-            } else {
-                // Follow
-                await fetch(`http://localhost:3000/api/follows/${user.id}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ followerId: currentUser.id })
-                });
-                setIsFollowing(true);
-                setFollowersCount(prev => prev + 1);
-            }
-        } catch (error) {
-            console.error('Error toggling follow:', error);
-        } finally {
-            setFollowLoading(false);
-        }
+    const userDogs = akitas.filter(dog => dog.ownerId === user.id);
+    const userLitters = litters.filter(litter => litter.breederId === user.id);
+    const userPosts = posts.filter(post => post.authorId === user.id);
+
+    const openUserList = (type: 'followers' | 'following') => {
+        setUserListModalType(type);
+        setUserListModalOpen(true);
     };
 
     const isBreeder = user.role === 'breeder';
@@ -215,7 +199,7 @@ export const Profile = () => {
                 puppies: [],
                 approvalStatus: 'pending',
                 location: user?.location || 'Unknown',
-                status: addLitterForm.status as any // Cast to any to avoid union type mismatch for now, or better: as 'Available' | 'Planned' | 'Expecting' | 'Sold Out' | 'Reserved' | 'Sold'
+                status: addLitterForm.status as 'Available' | 'Expecting' | 'Reserved' | 'Sold'
             });
             setIsAddLitterModalOpen(false);
             setAddLitterForm({
@@ -280,7 +264,7 @@ export const Profile = () => {
             await navigator.clipboard.writeText(url);
             setCopiedPostId(postId);
             setTimeout(() => setCopiedPostId(null), 2000);
-        } catch (err) {
+        } catch {
             alert('Failed to copy link.');
         }
     };
@@ -293,6 +277,13 @@ export const Profile = () => {
                 isOpen={lightboxOpen}
                 onClose={() => setLightboxOpen(false)}
                 imageSrc={lightboxImage}
+            />
+
+            <UserListModal
+                isOpen={userListModalOpen}
+                onClose={() => setUserListModalOpen(false)}
+                title={userListModalType === 'followers' ? 'Followers' : 'Following'}
+                endpoint={`/api/follows/${user.id}/${userListModalType}`}
             />
 
             {/* Edit Profile Modal */}
@@ -558,14 +549,14 @@ export const Profile = () => {
                             <h1 className="text-2xl font-bold text-gray-900 truncate">{user.kennelName || user.name}</h1>
                             <p className="text-sm text-gray-500">{user.role === 'breeder' ? `Breeder • ${user.name}` : 'Akita Owner'}</p>
                             <div className="flex items-center space-x-6 mt-2">
-                                <span className="text-sm">
+                                <button onClick={() => openUserList('followers')} className="text-sm hover:text-brand-primary transition-colors">
                                     <span className="font-semibold text-gray-900">{followersCount}</span>
                                     <span className="text-gray-500"> Followers</span>
-                                </span>
-                                <span className="text-sm">
+                                </button>
+                                <button onClick={() => openUserList('following')} className="text-sm hover:text-brand-primary transition-colors">
                                     <span className="font-semibold text-gray-900">{followingCount}</span>
                                     <span className="text-gray-500"> Following</span>
-                                </span>
+                                </button>
                             </div>
                         </div>
                         <div className="mt-6 flex flex-col justify-stretch space-y-3 sm:flex-row sm:space-y-0 sm:space-x-4 ml-4">
@@ -575,19 +566,14 @@ export const Profile = () => {
                                 </button>
                             ) : (
                                 <>
-                                    <button
-                                        onClick={handleFollowToggle}
-                                        disabled={followLoading}
-                                        className={clsx(
-                                            "inline-flex justify-center items-center space-x-2 px-4 py-2 border shadow-sm text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary",
-                                            isFollowing
-                                                ? "border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
-                                                : "border-transparent text-white bg-brand-primary hover:bg-brand-secondary"
-                                        )}
-                                    >
-                                        {isFollowing ? <UserMinus className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
-                                        <span>{followLoading ? 'Loading...' : (isFollowing ? 'Unfollow' : 'Follow')}</span>
-                                    </button>
+                                    <FollowButton
+                                        userId={user.id}
+                                        initialIsFollowing={isFollowing}
+                                        onToggle={(newIsFollowing) => {
+                                            setIsFollowing(newIsFollowing);
+                                            setFollowersCount(prev => newIsFollowing ? prev + 1 : Math.max(0, prev - 1));
+                                        }}
+                                    />
                                     <button onClick={() => navigate('/messages')} className="inline-flex justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand-primary hover:bg-brand-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary">
                                         Message
                                     </button>
@@ -603,12 +589,12 @@ export const Profile = () => {
                 {/* Tabs */}
                 <div className="border-t border-gray-200">
                     <nav className="-mb-px flex px-8 space-x-8" aria-label="Tabs">
-                        {['feed', 'overview', 'kennel', 'litters', 'gallery'].map((tab) => {
+                        {(['feed', 'overview', 'kennel', 'litters', 'gallery'] as const).map((tab) => {
                             if (tab === 'litters' && !isBreeder) return null;
                             return (
                                 <button
                                     key={tab}
-                                    onClick={() => setActiveTab(tab as any)}
+                                    onClick={() => setActiveTab(tab)}
                                     className={clsx(
                                         activeTab === tab ? 'border-brand-primary text-brand-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
                                         'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm capitalize'
@@ -776,7 +762,7 @@ export const Profile = () => {
                                 {userDogs.map(dog => (
                                     <Link key={dog.id} to={`/akitas/${dog.id}`} className="bg-white rounded-lg shadow overflow-hidden hover:shadow-md transition-shadow">
                                         <div className="aspect-w-3 aspect-h-2">
-                                            <img src={dog.images[0] || "https://images.unsplash.com/photo-1563460716037-460a3ad24dd9?auto=format&fit=crop&q=80&w=400"} alt={dog.callName} className="w-full h-48 object-cover" />
+                                            <img src={dog.images[0] || "/default-dog.png"} alt={dog.callName} className="w-full h-48 object-cover" />
                                         </div>
                                         <div className="p-4">
                                             <div className="flex justify-between items-start">

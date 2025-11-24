@@ -1,40 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, Bell, MessageSquare, Menu, LogOut } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import { SearchResults } from '../SearchResults';
 
 export const Navbar = () => {
-    const { currentUser, logout } = useStore();
+    const { currentUser, logout, unreadCount } = useStore();
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
     const [showSearchResults, setShowSearchResults] = useState(false);
-    const [unreadCount, setUnreadCount] = useState(0);
 
     const handleLogout = () => {
         logout();
         navigate('/login');
     };
-
-    // Poll for unread notifications
-    useEffect(() => {
-        if (!currentUser) return;
-
-        const fetchUnreadCount = async () => {
-            try {
-                const response = await fetch(`http://localhost:3000/api/notifications/unread-count?userId=${currentUser.id}`);
-                const data = await response.json();
-                setUnreadCount(data.count);
-            } catch (error) {
-                console.error('Error fetching unread count:', error);
-            }
-        };
-
-        fetchUnreadCount();
-        const interval = setInterval(fetchUnreadCount, 30000); // Poll every 30 seconds
-
-        return () => clearInterval(interval);
-    }, [currentUser]);
 
     return (
         <nav className="bg-white shadow-sm sticky top-0 z-50">

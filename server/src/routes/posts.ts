@@ -6,6 +6,11 @@ const router = Router();
 // GET /api/posts - List all posts (Feed)
 router.get('/', async (req: Request, res: Response) => {
     const supabase = getSupabase(req.headers.authorization);
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
     try {
         // 1. Fetch Posts
         const { data: posts, error } = await supabase
@@ -14,7 +19,9 @@ router.get('/', async (req: Request, res: Response) => {
                 *,
                 author:profiles(id, name, avatar)
             `)
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false })
+            .range(from, to);
+
         if (error) {
             console.error('❌ Posts fetch error:', error.message);
             return res.json([]);
@@ -78,6 +85,41 @@ router.post('/:id/comment', async (req: Request, res: Response) => {
         .select()
         .single();
     if (error) return res.status(500).json({ error: error.message });
+
+    // Create Notification
+    try {
+        // Get post author
+        const { data: post } = await supabase
+            .from('posts')
+            .select('author_id')
+            .eq('id', id)
+            .single();
+
+        if (post && post.author_id !== author_id) {
+            // Get commenter name
+            const { data: commenter } = await supabase
+                .from('profiles')
+                .select('name')
+                .eq('id', author_id)
+                .single();
+
+            await supabase.from('notifications').insert({
+                user_id: post.author_id,
+                type: 'comment',
+                title: 'New Comment',
+                message: `${commenter?.name || 'Someone'} commented on your post`,
+                link: `/community/thread/${id}` // Assuming posts are threads or have a detail view. If feed only, maybe just /profile/me? Or expand post?
+                // For now, let's point to the profile or feed if we don't have a dedicated post page.
+                // Actually, let's just point to the feed for now or a placeholder.
+                // Wait, we have /community/thread/:id but that's for threads.
+                // Posts are on the feed. Let's just link to the user profile for now or do nothing.
+                // Better: Link to the post author's profile where the post is likely visible.
+            });
+        }
+    } catch (err) {
+        console.error('Error creating notification:', err);
+    }
+
     res.status(201).json(data);
 });
 
@@ -97,6 +139,36 @@ router.post('/:id/like', async (req: Request, res: Response) => {
         res.json({ liked: false });
     } else {
         await supabase.from('likes').insert([{ user_id, post_id: id }]);
+
+        // Create Notification
+        try {
+            // Get post author
+            const { data: post } = await supabase
+                .from('posts')
+                .select('author_id')
+                .eq('id', id)
+                .single();
+
+            if (post && post.author_id !== user_id) {
+                // Get liker name
+                const { data: liker } = await supabase
+                    .from('profiles')
+                    .select('name')
+                    .eq('id', user_id)
+                    .single();
+
+                await supabase.from('notifications').insert({
+                    user_id: post.author_id,
+                    type: 'like',
+                    title: 'New Like',
+                    message: `${liker?.name || 'Someone'} liked your post`,
+                    link: `/profile/${post.author_id}` // Link to profile for now
+                });
+            }
+        } catch (err) {
+            console.error('Error creating notification:', err);
+        }
+
         res.json({ liked: true });
     }
 });

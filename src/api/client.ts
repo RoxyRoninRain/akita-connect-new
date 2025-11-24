@@ -30,7 +30,7 @@ export const akitaApi = {
 export const userApi = {
     getAll: () => api.get('/users').then(res => res.data),
     getById: (id: string) => api.get(`/users/${id}`).then(res => res.data),
-    update: (_id: string, data: any) => api.post(`/users`, data).then(res => res.data), // Using upsert endpoint
+    update: (id: string, data: any) => api.put(`/users/${id}`, data).then(res => res.data)
 };
 
 export const litterApi = {
@@ -45,7 +45,7 @@ export const litterApi = {
 };
 
 export const threadApi = {
-    getAll: () => api.get('/threads').then(res => res.data),
+    getAll: (page = 1, limit = 10) => api.get(`/threads?page=${page}&limit=${limit}`).then(res => res.data),
     getById: (id: string) => api.get(`/threads/${id}`).then(res => res.data),
     create: (data: any) => api.post('/threads', data).then(res => res.data),
     reply: (id: string, data: any) => api.post(`/threads/${id}/reply`, data).then(res => res.data),
@@ -54,7 +54,7 @@ export const threadApi = {
 };
 
 export const postApi = {
-    getAll: () => api.get('/posts').then(res => res.data),
+    getAll: (page = 1, limit = 10) => api.get(`/posts?page=${page}&limit=${limit}`).then(res => res.data),
     getById: (id: string) => api.get(`/posts/${id}`).then(res => res.data),
     create: (data: any) => api.post('/posts', data).then(res => res.data),
     update: (id: string, data: any) => api.put(`/posts/${id}`, data).then(res => res.data),
@@ -77,4 +77,25 @@ export const eventApi = {
     delete: (id: string) => api.delete(`/events/${id}`).then(res => res.data),
     rsvp: (id: string, status: string) => api.post(`/events/${id}/rsvp`, { status }).then(res => res.data),
     removeRsvp: (id: string) => api.delete(`/events/${id}/rsvp`).then(res => res.data),
+};
+
+export const notificationsApi = {
+    getAll: (userId: string) => api.get(`/notifications?userId=${userId}`).then(res => res.data),
+    getUnreadCount: (userId: string) => api.get(`/notifications/unread-count?userId=${userId}`).then(res => res.data),
+    markAsRead: (id: string) => api.put(`/notifications/${id}/read`).then(res => res.data),
+    markAllAsRead: (userId: string) => api.put('/notifications/read-all', { userId }).then(res => res.data),
+    delete: (id: string) => api.delete(`/notifications/${id}`).then(res => res.data),
+};
+
+export const searchApi = {
+    search: (query: string) => api.get(`/search?q=${encodeURIComponent(query)}`).then(res => res.data),
+};
+
+export const marketplaceApi = {
+    search: (filters: { location?: string, status?: string }) => {
+        const params = new URLSearchParams();
+        if (filters.location) params.append('location', filters.location);
+        if (filters.status) params.append('status', filters.status);
+        return api.get(`/marketplace?${params.toString()}`).then(res => res.data);
+    },
 };

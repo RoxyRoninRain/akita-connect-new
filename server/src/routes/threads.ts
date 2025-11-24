@@ -205,6 +205,7 @@ router.post('/', async (req: Request, res: Response) => {
 // POST /api/threads/:id/reply - Add a reply to a thread
 router.post('/:id/reply', async (req: Request, res: Response) => {
     const userClient = getSupabase(req.headers.authorization);
+    const adminClient = supabase;
     const { id } = req.params;
     const { author_id, content, images } = req.body;
 
@@ -236,6 +237,25 @@ router.post('/:id/reply', async (req: Request, res: Response) => {
             .from('threads')
             .update({ last_active: new Date().toISOString() })
             .eq('id', id);
+
+        // Create notification for thread author if it's not their own reply
+        const { data: thread } = await adminClient
+            .from('threads')
+            .select('author_id, title')
+            .eq('id', id)
+            .single();
+
+        if (thread && thread.author_id !== author_id) {
+            await adminClient
+                .from('notifications')
+                .insert({
+                    user_id: thread.author_id,
+                    type: 'comment',
+                    title: 'New Reply',
+                    message: `${user.user_metadata?.name || 'Someone'} replied to your thread "${thread.title}"`,
+                    link: `/community/thread/${id}`
+                });
+        }
 
         res.status(201).json(data);
     } catch (error: any) {

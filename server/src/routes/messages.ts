@@ -180,6 +180,7 @@ router.get('/:id', async (req: Request, res: Response) => {
                 id,
                 content,
                 created_at,
+                attachments,
                 sender:sender_id (
                     id,
                     name,
@@ -285,15 +286,15 @@ router.post('/', async (req: Request, res: Response) => {
     }
 });
 
-// POST /api/conversations/:id/messages - Send message
 router.post('/:id/messages', async (req: Request, res: Response) => {
     const adminClient = supabase;
     const userClient = getSupabase(req.headers.authorization);
     const { id } = req.params;
-    const { content, attachments } = req.body;
+    const { content, images } = req.body;
 
-    if (!content || content.trim() === '') {
-        return res.status(400).json({ error: 'Message content is required' });
+    // Require either content or images
+    if ((!content || content.trim() === '') && (!images || images.length === 0)) {
+        return res.status(400).json({ error: 'Message content or images required' });
     }
 
     try {
@@ -321,13 +322,14 @@ router.post('/:id/messages', async (req: Request, res: Response) => {
             .insert([{
                 conversation_id: id,
                 sender_id: currentUserId,
-                content: content.trim(),
-                attachments: attachments || []
+                content: content ? content.trim() : '',
+                attachments: images || []
             }])
             .select(`
                 id,
                 content,
                 created_at,
+                attachments,
                 sender:sender_id (
                     id,
                     name,
@@ -346,11 +348,35 @@ router.post('/:id/messages', async (req: Request, res: Response) => {
             .update({ updated_at: new Date().toISOString() })
             .eq('id', id);
 
+        // Create notifications for other participants
+        const { data: participants } = await adminClient
+            .from('conversation_participants')
+            .select('user_id')
+            .eq('conversation_id', id)
+            .neq('user_id', currentUserId);
+
+        if (participants) {
+            const notifications = participants.map((p: any) => ({
+                user_id: p.user_id,
+                type: 'message',
+                title: 'New Message',
+                message: `${user.user_metadata?.name || 'Someone'} sent you a message`,
+                link: `/messages/${id}`
+            }));
+
+            if (notifications.length > 0) {
+                await adminClient
+                    .from('notifications')
+                    .insert(notifications);
+            }
+        }
+
         const msg = message as any;
         res.status(201).json({
             id: msg.id,
             content: msg.content,
             created_at: msg.created_at,
+            attachments: msg.attachments || [],
             sender: {
                 id: msg.sender.id,
                 name: msg.sender.name,

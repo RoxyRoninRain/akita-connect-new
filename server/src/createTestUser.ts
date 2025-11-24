@@ -1,4 +1,4 @@
-import { supabase } from './src/db';
+import { supabase } from './db';
 
 async function createTestUser() {
     console.log('Creating second test user...');

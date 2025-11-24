@@ -13,6 +13,8 @@ import messageRoutes from './routes/messages';
 import searchRoutes from './routes/search';
 import followsRoutes from './routes/follows';
 import notificationsRoutes from './routes/notifications';
+import marketplaceRoutes from './routes/marketplace';
+import uploadsRoutes from './routes/uploads';
 
 dotenv.config();
 
@@ -20,8 +22,12 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors());
-app.use(express.json());
+const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+app.use(cors({
+    origin: [clientUrl, 'http://localhost:5173'],
+    credentials: true
+}));
+app.use(express.json({ limit: '10mb' })); // Increase limit for base64 images
 app.use(morgan('dev'));
 
 // Routes
@@ -36,6 +42,8 @@ app.use('/api/conversations', messageRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/follows', followsRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/marketplace', marketplaceRoutes);
+app.use('/api/uploads', uploadsRoutes);
 
 app.get('/', (req: Request, res: Response) => {
     res.send('Akita Connect API is running');
@@ -44,9 +52,17 @@ app.get('/', (req: Request, res: Response) => {
 // Export app for Vercel
 export default app;
 
-// Only listen if not running in Vercel (Vercel handles listening)
-if (process.env.NODE_ENV !== 'production') {
-    app.listen(port, () => {
-        console.log(`Server running on port ${port}`);
+// Only start server if not running in Vercel
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+    const server = app.listen(port, () => {
+        console.log(`Server running on port ${port} in ${process.env.NODE_ENV || 'development'} mode`);
+    });
+
+    server.on('error', (error: any) => {
+        console.error('Server error:', error);
     });
 }
+
+server.on('error', (error: any) => {
+    console.error('Server error:', error);
+});

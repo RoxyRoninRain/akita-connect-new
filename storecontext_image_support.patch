@@ -1,0 +1,49 @@
+diff --git a/src/context/StoreContext.tsx b/src/context/StoreContext.tsx
+index 1234567..abcdefg 100644
+--- a/src/context/StoreContext.tsx
++++ b/src/context/StoreContext.tsx
+@@ -30,8 +30,8 @@ interface StoreContextType {
+     toggleLike: (postId: string) => void;
+     addComment: (postId: string, content: string) => void;
+     updateUser: (id: string, updates: Partial<User>) => Promise<void>;
+-    addThreadReply: (threadId: string, content: string) => void;
+-    addThread: (thread: Omit<Thread, 'id' | 'replies' | 'views' | 'lastActive' | 'likesCount' | 'userHasLiked' | 'isPinned'>) => void;
++    addThreadReply: (threadId: string, content: string, images?: string[]) => void;
++    addThread: (thread: Omit<Thread, 'id' | 'replies' | 'views' | 'lastActive' | 'likesCount' | 'userHasLiked' | 'isPinned'> & { images?: string[] }) => void;
+     toggleThreadLike: (threadId: string) => void;
+     toggleThreadPin: (threadId: string) => void;
+     addEvent: (event: Omit<Event, 'id' | 'attendees'>) => void;
+@@ -432,11 +432,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childr
+         }
+     };
+ 
+-    const addThreadReply = async (threadId: string, content: string) => {
++    const addThreadReply = async (threadId: string, content: string, images?: string[]) => {
+         if (!currentUser) return;
+         try {
+             const newReply = await threadApi.reply(threadId, {
+                 author_id: currentUser.id,
+-                content
++                content,
++                images: images || []
+             });
+ 
+             const mappedReply = {
+@@ -462,13 +463,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childr
+         }
+     };
+ 
+-    const addThread = async (threadData: Omit<Thread, 'id' | 'replies' | 'views' | 'lastActive' | 'likesCount' | 'userHasLiked' | 'isPinned'>) => {
++    const addThread = async (threadData: Omit<Thread, 'id' | 'replies' | 'views' | 'lastActive' | 'likesCount' | 'userHasLiked' | 'isPinned'> & { images?: string[] }) => {
+         if (!currentUser) return;
+         try {
+             const newThread = await threadApi.create({
+                 author_id: currentUser.id,
+                 category: threadData.category,
+                 title: threadData.title,
+                 content: threadData.content,
+-                tags: threadData.tags
++                tags: threadData.tags,
++                images: threadData.images || []
+             });
+ 

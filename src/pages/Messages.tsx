@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { Send, Plus, ArrowLeft } from 'lucide-react';
+import { Send, Plus, ArrowLeft, Paperclip } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { conversationApi } from '../api/conversations';
 import { useNavigate } from 'react-router-dom';
+import { ImageUpload } from '../components/common/ImageUpload';
 
 interface Message {
     id: string;
@@ -34,6 +35,8 @@ export const Messages = () => {
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
     const [messageText, setMessageText] = useState('');
+    const [messageImages, setMessageImages] = useState<string[]>([]);
+    const [showImageUpload, setShowImageUpload] = useState(false);
     const [isNewConversationModalOpen, setIsNewConversationModalOpen] = useState(false);
     const [selectedUserId, setSelectedUserId] = useState('');
     const [loading, setLoading] = useState(true);
@@ -71,6 +74,78 @@ export const Messages = () => {
         }
     };
 
+    // Set up real-time subscriptions for messages
+    useEffect(() => {
+        if (!selectedConversation || !currentUser) return;
+
+        let channel: any;
+
+        const setupSubscription = async () => {
+            try {
+                const { supabase } = await import('../supabaseClient');
+                console.log('Supabase imported:', !!supabase);
+                channel = supabase
+                    .channel(`messages:${selectedConversation.id}`)
+                    .on(
+                        'postgres_changes',
+                        {
+                            event: 'INSERT',
+                            schema: 'public',
+                            table: 'messages',
+                            filter: `conversation_id=eq.${selectedConversation.id}`
+                        },
+                        async (payload) => {
+                            console.log('New message received:', payload);
+                            // Fetch full message with sender info
+                            const { data } = await supabase
+                                .from('messages')
+                                .select(`
+                                    id,
+                                    content,
+                                    created_at,
+                                    sender:sender_id (
+                                        id,
+                                        name,
+                                        avatar
+                                    )
+                                `)
+                                .eq('id', payload.new.id)
+                                .single();
+
+                            if (data) {
+                                const newMessage = {
+                                    id: (data as any).id,
+                                    content: (data as any).content,
+                                    created_at: (data as any).created_at,
+                                    sender: {
+                                        id: (data as any).sender.id,
+                                        name: (data as any).sender.name,
+                                        avatar: (data as any).sender.avatar
+                                    }
+                                };
+
+                                setSelectedConversation(prev => prev ? {
+                                    ...prev,
+                                    messages: [...(prev.messages || []), newMessage]
+                                } : null);
+                            }
+                        }
+                    )
+                    .subscribe();
+            } catch (err) {
+                console.error('Error in setupSubscription:', err);
+            }
+        };
+
+        setupSubscription();
+
+        return () => {
+            if (channel) {
+                channel.unsubscribe();
+            }
+        };
+    }, [selectedConversation?.id, currentUser]);
+
     const loadConversation = async (conversationId: string) => {
         try {
             const data = await conversationApi.getById(conversationId);
@@ -86,15 +161,17 @@ export const Messages = () => {
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!messageText.trim() || !selectedConversation) return;
+        if ((!messageText.trim() && messageImages.length === 0) || !selectedConversation) return;
 
         try {
-            const newMessage = await conversationApi.sendMessage(selectedConversation.id, messageText);
+            const newMessage = await conversationApi.sendMessage(selectedConversation.id, messageText, messageImages);
             setSelectedConversation(prev => prev ? {
                 ...prev,
                 messages: [...(prev.messages || []), newMessage]
             } : null);
             setMessageText('');
+            setMessageImages([]);
+            setShowImageUpload(false);
             loadConversations(); // Refresh list to update last message
         } catch (error) {
             console.error('Error sending message:', error);
@@ -245,7 +322,14 @@ export const Messages = () => {
                                                     {!isCurrentUser && (
                                                         <p className="text-xs font-medium mb-1">{msg.sender.name}</p>
                                                     )}
-                                                    <p className="text-sm">{msg.content}</p>
+                                                    {msg.content && <p className="text-sm">{msg.content}</p>}
+                                                    {(msg as any).attachments?.length > 0 && (
+                                                        <div className="mt-2 space-y-2">
+                                                            {(msg as any).attachments.map((url: string, idx: number) => (
+                                                                <img key={idx} src={url} alt={`Attachment ${idx + 1}`} className="max-w-full rounded" />
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                     <p className={`text-xs mt-1 ${isCurrentUser ? 'text-white/70' : 'text-gray-500'}`}>
                                                         {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                     </p>
@@ -258,7 +342,44 @@ export const Messages = () => {
 
                                 {/* Input */}
                                 <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-200 bg-gray-50">
+                                    {/* Image Upload Section */}
+                                    {showImageUpload && (
+                                        <div className="mb-3 p-3 bg-white rounded-lg border border-gray-200">
+                                            <ImageUpload
+                                                uploadType="message-attachment"
+                                                onUploadSuccess={(url) => setMessageImages([...messageImages, url])}
+                                                currentImage={messageImages[messageImages.length - 1]}
+                                            />
+                                        </div>
+                                    )}
+
+                                    {/* Image Previews */}
+                                    {messageImages.length > 0 && (
+                                        <div className="mb-3 flex flex-wrap gap-2">
+                                            {messageImages.map((img, idx) => (
+                                                <div key={idx} className="relative">
+                                                    <img src={img} alt={`Attachment ${idx + 1}`} className="h-16 w-16 object-cover rounded-md" />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setMessageImages(messageImages.filter((_, i) => i !== idx))}
+                                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center hover:bg-red-600"
+                                                    >
+                                                        <span className="text-xs">×</span>
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
                                     <div className="flex space-x-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowImageUpload(!showImageUpload)}
+                                            className="p-3 text-gray-500 hover:text-brand-primary hover:bg-gray-100 rounded-full transition-colors"
+                                            title="Attach image"
+                                        >
+                                            <Paperclip className="h-5 w-5" />
+                                        </button>
                                         <input
                                             type="text"
                                             value={messageText}
@@ -268,7 +389,7 @@ export const Messages = () => {
                                         />
                                         <button
                                             type="submit"
-                                            disabled={!messageText.trim()}
+                                            disabled={!messageText.trim() && messageImages.length === 0}
                                             className="p-3 bg-brand-primary text-white rounded-full hover:bg-brand-secondary disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             <Send className="h-5 w-5" />

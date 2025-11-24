@@ -15,12 +15,19 @@ export const Login = () => {
         e.preventDefault();
         setError('');
         setLoading(true);
+        console.log('🔵 Login form submitted', { email });
         try {
+            console.log('🔵 Calling login function...');
             await login(email, password);
+            console.log('✅ Login function completed successfully');
+            console.log('🔵 Navigating to home page...');
             navigate('/');
+            console.log('✅ Navigation triggered');
         } catch (err) {
+            console.error('❌ Login failed:', err);
             setError('Invalid email or password');
         } finally {
+            console.log('🔵 Setting loading to false');
             setLoading(false);
         }
     };

@@ -28,6 +28,13 @@ export const Sidebar = () => {
                             <Activity className="h-5 w-5 mr-3 text-gray-400 group-hover:text-brand-primary" />
                             <span>Events</span>
                         </Link>
+                        <Link to="/notifications" className="flex items-center text-gray-700 hover:text-brand-primary group">
+                            <div className="relative">
+                                <div className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full"></div>
+                                <Activity className="h-5 w-5 mr-3 text-gray-400 group-hover:text-brand-primary" />
+                            </div>
+                            <span>Notifications</span>
+                        </Link>
                     </nav>
                 </div>
 

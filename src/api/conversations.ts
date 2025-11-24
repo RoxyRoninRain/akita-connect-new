@@ -17,8 +17,8 @@ export const conversationApi = {
         return data;
     },
 
-    sendMessage: async (conversationId: string, content: string) => {
-        const { data } = await api.post(`/conversations/${conversationId}/messages`, { content });
+    sendMessage: async (conversationId: string, content: string, images?: string[]) => {
+        const { data } = await api.post(`/conversations/${conversationId}/messages`, { content, images });
         return data;
     }
 };

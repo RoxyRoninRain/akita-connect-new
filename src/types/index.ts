@@ -91,7 +91,10 @@ export interface Comment {
     timestamp: string;
     likesCount?: number;
     userHasLiked?: boolean;
+    images?: string[];
 }
+
+export type Reply = Comment;
 
 export interface Post {
     id: string;
@@ -116,6 +119,8 @@ export interface Thread {
     tags?: string[];
     likesCount?: number;
     userHasLiked?: boolean;
+    images?: string[];
+    createdAt?: string;
 }
 
 export interface Event {
@@ -153,4 +158,15 @@ export interface LegacyEvent {
     location: string;
     attendees: string[]; // User IDs
     type: 'show' | 'meetup' | 'seminar';
+}
+
+export interface Notification {
+    id: string;
+    userId: string;
+    type: string;
+    title: string;
+    message: string;
+    link: string;
+    read: boolean;
+    createdAt: string;
 }

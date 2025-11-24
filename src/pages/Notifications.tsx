@@ -1,81 +1,14 @@
-import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../context/StoreContext';
+import type { Notification } from '../types';
 import { Bell, Trash2, Check } from 'lucide-react';
 import clsx from 'clsx';
 
-interface Notification {
-    id: string;
-    type: string;
-    title: string;
-    message: string;
-    link: string;
-    read: boolean;
-    created_at: string;
-}
+
 
 export const Notifications = () => {
-    const { currentUser } = useStore();
+    const { notifications, markAsRead, markAllAsRead, deleteNotification, loading } = useStore();
     const navigate = useNavigate();
-    const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        fetchNotifications();
-    }, [currentUser]);
-
-    const fetchNotifications = async () => {
-        if (!currentUser) return;
-
-        try {
-            const response = await fetch(`http://localhost:3000/api/notifications?userId=${currentUser.id}`);
-            const data = await response.json();
-            setNotifications(data);
-        } catch (error) {
-            console.error('Error fetching notifications:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const markAsRead = async (id: string) => {
-        try {
-            await fetch(`http://localhost:3000/api/notifications/${id}/read`, {
-                method: 'PUT'
-            });
-            setNotifications(prev =>
-                prev.map(n => n.id === id ? { ...n, read: true } : n)
-            );
-        } catch (error) {
-            console.error('Error marking as read:', error);
-        }
-    };
-
-    const markAllAsRead = async () => {
-        if (!currentUser) return;
-
-        try {
-            await fetch('http://localhost:3000/api/notifications/read-all', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: currentUser.id })
-            });
-            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-        } catch (error) {
-            console.error('Error marking all as read:', error);
-        }
-    };
-
-    const deleteNotification = async (id: string) => {
-        try {
-            await fetch(`http://localhost:3000/api/notifications/${id}`, {
-                method: 'DELETE'
-            });
-            setNotifications(prev => prev.filter(n => n.id !== id));
-        } catch (error) {
-            console.error('Error deleting notification:', error);
-        }
-    };
 
     const handleNotificationClick = (notification: Notification) => {
         if (!notification.read) {
@@ -107,7 +40,7 @@ export const Notifications = () => {
 
     const unreadCount = notifications.filter(n => !n.read).length;
 
-    if (loading) {
+    if (loading && notifications.length === 0) {
         return <div className="max-w-3xl mx-auto text-center py-12">Loading...</div>;
     }
 
@@ -170,8 +103,8 @@ export const Notifications = () => {
                                                     </p>
                                                 )}
                                                 <p className="text-xs text-gray-500 mt-1">
-                                                    {new Date(notification.created_at).toLocaleDateString()} at{' '}
-                                                    {new Date(notification.created_at).toLocaleTimeString()}
+                                                    {new Date(notification.createdAt).toLocaleDateString()} at{' '}
+                                                    {new Date(notification.createdAt).toLocaleTimeString()}
                                                 </p>
                                             </div>
                                             <button

@@ -33,6 +33,53 @@ router.post('/:userId', async (req, res) => {
             throw error;
         }
 
+        // Create notification for the user being followed
+        await supabase
+            .from('notifications')
+            .insert({
+                user_id: userId,
+                type: 'follow',
+                title: 'New Follower',
+                message: 'Someone started following you', // We'll enrich this with the follower's name if we fetch it, or just keep it generic for now. 
+                // Ideally we fetch the follower's name. Let's do a quick fetch or just use a generic message.
+                // Better: Fetch follower profile to get name.
+                link: `/profile/${followerId}`
+            });
+
+        // Fetch follower name for better notification message
+        const { data: followerProfile } = await supabase
+            .from('profiles')
+            .select('name')
+            .eq('id', followerId)
+            .single();
+
+        if (followerProfile) {
+            // Update the notification we just created with the specific name
+            // Actually, let's just do it in one go if we fetch first.
+            // Refactoring to fetch first.
+        }
+
+        // RE-DOING THE BLOCK TO BE CLEANER
+
+        // Fetch follower profile first
+        const { data: followerProfileData } = await supabase
+            .from('profiles')
+            .select('name')
+            .eq('id', followerId)
+            .single();
+
+        const followerName = followerProfileData?.name || 'Someone';
+
+        await supabase
+            .from('notifications')
+            .insert({
+                user_id: userId,
+                type: 'follow',
+                title: 'New Follower',
+                message: `${followerName} started following you`,
+                link: `/profile/${followerId}`
+            });
+
         res.json(data);
     } catch (error: any) {
         console.error('Follow error:', error);
