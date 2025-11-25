@@ -25,7 +25,7 @@ export const CommunityHub = () => {
         },
         {
             label: 'Upcoming Events',
-            value: events.filter(e => new Date(e.date) > new Date()).length,
+            value: events.filter(e => new Date(e.startDate).getTime() > Date.now()).length,
             icon: Calendar,
             color: 'text-purple-500',
             bg: 'bg-purple-50',
@@ -43,12 +43,12 @@ export const CommunityHub = () => {
 
     // Get recent activity
     const recentThreads = [...threads]
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
         .slice(0, 3);
 
     const upcomingEvents = [...events]
-        .filter(e => new Date(e.date) > new Date())
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        .filter(e => new Date(e.startDate).getTime() > Date.now())
+        .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
         .slice(0, 3);
 
     const newMembers = [...users]
@@ -150,7 +150,7 @@ export const CommunityHub = () => {
                                     <h3 className="text-base font-semibold text-gray-900 mb-1">{thread.title}</h3>
                                     <p className="text-sm text-gray-500 line-clamp-1">{thread.content}</p>
                                     <div className="mt-2 flex items-center text-xs text-gray-400">
-                                        <span>{new Date(thread.createdAt).toLocaleDateString()}</span>
+                                        <span>{new Date(thread.createdAt || Date.now()).toLocaleDateString()}</span>
                                         <span className="mx-2">•</span>
                                         <span>{thread.replies.length} replies</span>
                                         <span className="mx-2">•</span>
@@ -205,8 +205,8 @@ export const CommunityHub = () => {
                                     <Link key={event.id} to={`/events/${event.id}`} className="block group">
                                         <div className="flex space-x-3">
                                             <div className="flex-shrink-0 w-12 text-center bg-gray-50 rounded-lg p-1 border border-gray-100 group-hover:border-brand-primary transition-colors">
-                                                <span className="block text-xs font-bold text-gray-500 uppercase">{new Date(event.date).toLocaleString('default', { month: 'short' })}</span>
-                                                <span className="block text-lg font-bold text-brand-primary">{new Date(event.date).getDate()}</span>
+                                                <span className="block text-xs font-bold text-gray-500 uppercase">{new Date(event.startDate).toLocaleString('default', { month: 'short' })}</span>
+                                                <span className="block text-lg font-bold text-brand-primary">{new Date(event.startDate).getDate()}</span>
                                             </div>
                                             <div>
                                                 <p className="text-sm font-medium text-gray-900 group-hover:text-brand-primary transition-colors line-clamp-1">{event.title}</p>
