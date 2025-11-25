@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { User, Akita, Litter, Post, Thread, Event, Reply, Notification, Puppy } from '../types';
 import { MOCK_POSTS, MOCK_THREADS } from './mockData';
-import { akitaApi, userApi, litterApi, threadApi, postApi, eventApi, notificationsApi } from '../api/client';
+import { akitaApi, userApi, litterApi, threadApi, postApi, eventApi, notificationsApi, authApi } from '../api/client';
 import { mapAkitaFromDb, mapUserFromDb, mapLitterFromDb, mapAkitaToDb, mapLitterToDb, mapUserToDb, mapEventFromDb, mapEventToDb } from '../utils/mappers';
 import { supabase } from '../supabaseClient';
 
@@ -177,15 +177,22 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
 
             if (data.user) {
                 console.log('✅ Login successful, fetching profile for:', data.user.email);
-                // Manually fetch and set user to ensure UI updates immediately
-                const userProfile = await userApi.getById(data.user.id);
-                if (userProfile) {
-                    const mappedUser = mapUserFromDb(userProfile);
-                    setCurrentUser(mappedUser);
-                    console.log('✅ currentUser set manually in login');
-                } else {
-                    console.warn('⚠️ Login succeeded but profile not found');
+                // Fetch user profile
+                const userProfile = await userApi.getById(data.user.id).catch((err) => {
+                    console.error('❌ Failed to fetch profile after login:', err);
+                    return null;
+                });
+
+                if (!userProfile) {
+                    console.error('❌ Critical Error: Profile not found for user:', data.user.id);
+                    // We do NOT auto-create here anymore to avoid masking backend issues.
+                    // If the profile is missing, it means registration failed or data is corrupted.
+                    throw new Error('User profile not found. Please contact support.');
                 }
+
+                const mappedUser = mapUserFromDb(userProfile);
+                setCurrentUser(mappedUser);
+                console.log('✅ currentUser set manually in login');
             }
         } catch (err) {
             console.error('❌ Login failed:', err);
@@ -212,53 +219,38 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         if (!password) throw new Error("Password required");
 
         try {
-            // 1. Create auth user
-            const { data: authData, error: authError } = await supabase.auth.signUp({
+            console.log('🔵 Registering via backend...');
+
+            const response = await authApi.register({
                 email: userData.email,
-                password
+                password,
+                name: userData.name,
+                avatar: userData.avatar
             });
 
-            if (authError) {
-                console.error('❌ Registration error:', authError.message);
-                throw authError;
+            // authApi.register returns the parsed JSON data directly (res.data)
+            // The backend returns { user, session }
+            const { user, session } = response;
+
+            if (session) {
+                const { error: sessionError } = await supabase.auth.setSession(session);
+                if (sessionError) throw sessionError;
             }
 
-            if (!authData.user) {
-                throw new Error('User creation failed');
+            // Fetch the new profile to set currentUser
+            const userProfile = await userApi.getById(user.id);
+            if (userProfile) {
+                const mappedUser = mapUserFromDb(userProfile);
+                setCurrentUser(mappedUser);
+                setUsers(prev => [...prev, mappedUser]);
             }
 
-            // 2. Create profile
-            const profileData = {
-                id: authData.user.id,
-                email: userData.email,
-                name: userData.name,
-                avatar: userData.avatar,
-                role: userData.role || 'user',
-                location: userData.location,
-                bio: userData.bio,
-                website: userData.website
-            };
-
-            // Insert profile into database
-            const { error: profileError } = await supabase
-                .from('profiles')
-                .insert([mapUserToDb(profileData)]);
-
-            if (profileError) {
-                console.error('❌ Profile creation error:', profileError.message);
-                // Optional: delete auth user if profile creation fails to maintain consistency
-                throw profileError;
-            }
-
-            // Manually set currentUser to avoid race condition with onAuthStateChange
-            const newUser = mapUserFromDb(profileData);
-            setCurrentUser(newUser);
-            setUsers(prev => [...prev, newUser]);
-
-            console.log('✅ Registration successful:', authData.user.email);
-        } catch (error) {
+            console.log('✅ Registration successful via backend:', user.email);
+        } catch (error: any) {
             console.error("Failed to register user", error);
-            throw error;
+            // Extract error message from axios error if possible
+            const message = error.response?.data?.error || error.message || 'Registration failed';
+            throw new Error(message);
         }
     };
 

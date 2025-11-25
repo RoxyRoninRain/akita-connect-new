@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { supabase } from '../supabaseClient';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/api';
 
 export const api = axios.create({
     baseURL: API_URL,
@@ -18,6 +18,10 @@ api.interceptors.request.use(async (config) => {
     }
     return config;
 });
+
+export const authApi = {
+    register: (data: any) => api.post('/auth/register', data).then(res => res.data),
+};
 
 export const akitaApi = {
     getAll: () => api.get('/akitas').then(res => res.data),

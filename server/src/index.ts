@@ -15,6 +15,7 @@ import followsRoutes from './routes/follows';
 import notificationsRoutes from './routes/notifications';
 import marketplaceRoutes from './routes/marketplace';
 import uploadsRoutes from './routes/uploads';
+import authRoutes from './routes/auth';
 
 dotenv.config();
 
@@ -58,6 +59,7 @@ app.use('/api/follows', followsRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/marketplace', marketplaceRoutes);
 app.use('/api/uploads', uploadsRoutes);
+app.use('/api/auth', authRoutes);
 
 app.get('/', (req: Request, res: Response) => {
     res.send('Akita Connect API is running (v2)');

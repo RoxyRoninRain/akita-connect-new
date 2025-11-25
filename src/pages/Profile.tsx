@@ -538,7 +538,7 @@ export const Profile = () => {
                 <div className="relative px-4 sm:px-6 lg:px-8 pb-6">
                     <div className="-mt-16 flex items-end space-x-5">
                         <div className="relative">
-                            <img className="h-32 w-32 rounded-full ring-4 ring-white bg-white object-cover" src={user.avatar} alt={user.name} />
+                            <img className="h-32 w-32 rounded-full ring-4 ring-white bg-white object-cover" src={user.avatar || `https://ui-avatars.com/api/?name=${user.name}&background=random`} alt={user.name} />
                             {isBreeder && (
                                 <span className="absolute bottom-0 right-0 block h-8 w-8 rounded-full bg-brand-secondary text-white flex items-center justify-center ring-2 ring-white" title="Breeder">
                                     <Shield className="h-5 w-5" />
@@ -624,7 +624,7 @@ export const Profile = () => {
                                             <div className="p-4">
                                                 <div className="flex items-center space-x-3 mb-4">
                                                     <Link to={`/profile/${author.id}`}>
-                                                        <img className="h-10 w-10 rounded-full object-cover" src={author.avatar} alt={author.name} />
+                                                        <img className="h-10 w-10 rounded-full object-cover" src={author.avatar || `https://ui-avatars.com/api/?name=${author.name}&background=random`} alt={author.name} />
                                                     </Link>
                                                     <div>
                                                         <Link to={`/profile/${author.id}`} className="text-sm font-medium text-gray-900 hover:underline">{author.name}</Link>
@@ -657,7 +657,7 @@ export const Profile = () => {
                                                             const commentAuthor = getUser(comment.authorId);
                                                             return (
                                                                 <div key={comment.id} className="flex space-x-3">
-                                                                    <img className="h-8 w-8 rounded-full object-cover" src={commentAuthor?.avatar} alt={commentAuthor?.name} />
+                                                                    <img className="h-8 w-8 rounded-full object-cover" src={commentAuthor?.avatar || `https://ui-avatars.com/api/?name=${commentAuthor?.name}&background=random`} alt={commentAuthor?.name} />
                                                                     <div className="bg-gray-50 rounded-lg p-3 flex-1">
                                                                         <p className="text-sm font-medium text-gray-900">{commentAuthor?.name}</p>
                                                                         <p className="text-sm text-gray-700">{comment.content}</p>
@@ -667,7 +667,7 @@ export const Profile = () => {
                                                         })}
                                                         {currentUser && (
                                                             <form onSubmit={(e) => handleCommentSubmit(e, post.id)} className="flex space-x-3">
-                                                                <img className="h-8 w-8 rounded-full object-cover" src={currentUser.avatar} alt={currentUser.name} />
+                                                                <img className="h-8 w-8 rounded-full object-cover" src={currentUser.avatar || `https://ui-avatars.com/api/?name=${currentUser.name}&background=random`} alt={currentUser.name} />
                                                                 <div className="flex-1 flex space-x-2">
                                                                     <input type="text" value={commentContent} onChange={(e) => setCommentContent(e.target.value)} placeholder="Write a comment..." className="flex-1 border-gray-300 rounded-md focus:ring-brand-primary focus:border-brand-primary text-sm" />
                                                                     <button type="submit" disabled={!commentContent.trim()} className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-primary hover:bg-brand-secondary disabled:opacity-50">Post</button>

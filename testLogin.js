@@ -13,7 +13,7 @@ async function login() {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                email: 'testuser@example.com',
+                email: 'testuser_1764039437596@example.com',
                 password: 'password123'
             })
         });
@@ -24,6 +24,25 @@ async function login() {
             console.log('Login Successful!');
             console.log('User ID:', data.user.id);
             console.log('Access Token:', data.access_token ? 'Present' : 'Missing');
+
+            // Try to fetch profile
+            console.log('Attempting to fetch profile...');
+            const profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${data.user.id}&select=*`, {
+                method: 'GET',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${data.access_token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const profileData = await profileResponse.json();
+            if (profileResponse.ok && profileData.length > 0) {
+                console.log('✅ Profile Found:', profileData[0]);
+            } else {
+                console.log('❌ Profile Not Found or Error:', profileData);
+            }
+
         } else {
             console.error('Login Failed:', data);
         }

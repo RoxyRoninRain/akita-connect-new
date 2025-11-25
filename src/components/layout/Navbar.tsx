@@ -99,7 +99,7 @@ export const Navbar = () => {
                                     <Link to="/profile">
                                         <img
                                             className="h-8 w-8 rounded-full object-cover border-2 border-brand-primary"
-                                            src={currentUser.avatar}
+                                            src={currentUser.avatar || `https://ui-avatars.com/api/?name=${currentUser.name}&background=random`}
                                             alt={currentUser.name}
                                         />
                                     </Link>
