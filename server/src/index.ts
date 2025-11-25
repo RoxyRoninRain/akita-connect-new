@@ -65,15 +65,15 @@ app.use('/api/auth', authRoutes);
 
 app.get('/api/version', (req: Request, res: Response) => {
     res.json({
-        version: '1.0.1',
+        version: '1.0.2',
         timestamp: new Date().toISOString(),
-        deployId: 'multer-fix-verified'
+        deployId: 'native-clean-fix'
     });
 });
 
 app.get('/', (req: Request, res: Response) => {
-    console.log('DEBUG: Root endpoint hit. Version: 1.0.1');
-    res.send('Akita Connect API is running (v2) - Version 1.0.1');
+    console.log('DEBUG: Root endpoint hit. Version: 1.0.2');
+    res.send('Akita Connect API is running (v2) - Version 1.0.2');
 });
 
 // Export app for Vercel
