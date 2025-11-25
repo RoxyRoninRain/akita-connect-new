@@ -54,8 +54,9 @@ export const ImageUpload = ({ onUploadSuccess, uploadType, currentImage, label, 
                 throw new Error('Not authenticated');
             }
 
-            // Upload to server
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+            // Upload to server - ensure /api is appended correctly
+            const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+            const API_URL = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
             const response = await fetch(`${API_URL}/uploads/${uploadType}`, {
                 method: 'POST',
                 headers: {
