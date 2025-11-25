@@ -31,7 +31,7 @@ app.use(cors({
         // Check if origin is allowed
         const allowedOrigins = [clientUrl, 'http://localhost:5173', 'http://localhost:4173'];
         const isLocalhost = origin.match(/^http:\/\/localhost:\d+$/);
-        const isVercel = origin.endsWith('.vercel.app');
+        const isVercel = typeof origin === 'string' && origin.endsWith('.vercel.app');
 
         if (allowedOrigins.indexOf(origin) !== -1 || isLocalhost || isVercel) {
             callback(null, true);
@@ -60,7 +60,7 @@ app.use('/api/marketplace', marketplaceRoutes);
 app.use('/api/uploads', uploadsRoutes);
 
 app.get('/', (req: Request, res: Response) => {
-    res.send('Akita Connect API is running');
+    res.send('Akita Connect API is running (v2)');
 });
 
 // Export app for Vercel
