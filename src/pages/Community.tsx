@@ -189,7 +189,7 @@ export const Community = () => {
 
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">Community Forums</h1>
+                <h1 className="text-2xl font-bold text-gray-900">Forums</h1>
                 <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
                     {/* Search Bar */}
                     <div className="relative flex-1 md:w-64">

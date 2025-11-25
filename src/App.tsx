@@ -14,6 +14,7 @@ const Onboarding = React.lazy(() => import('./pages/Onboarding').then(module => 
 const Profile = React.lazy(() => import('./pages/Profile').then(module => ({ default: module.Profile })));
 const AkitaDetail = React.lazy(() => import('./pages/AkitaDetail').then(module => ({ default: module.AkitaDetail })));
 const Community = React.lazy(() => import('./pages/Community').then(module => ({ default: module.Community })));
+const CommunityHub = React.lazy(() => import('./pages/CommunityHub').then(module => ({ default: module.CommunityHub })));
 const Directory = React.lazy(() => import('./pages/Directory').then(module => ({ default: module.Directory })));
 const Events = React.lazy(() => import('./pages/Events').then(module => ({ default: module.Events })));
 const EventDetail = React.lazy(() => import('./pages/EventDetail').then(module => ({ default: module.EventDetail })));
@@ -39,6 +40,7 @@ function App() {
               <Route path="akitas/:id" element={<AkitaDetail />} />
               <Route path="akitas" element={<Directory />} />
               <Route path="marketplace" element={<Marketplace />} />
+              <Route path="hub" element={<CommunityHub />} />
               <Route path="community" element={<Community />} />
               <Route path="community/thread/:id" element={<ThreadDetail />} />
               <Route path="thread/:id" element={<ThreadDetail />} />
