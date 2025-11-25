@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-THIS_IS_A_SYNTAX_ERROR_TO_TEST_DEPLOYMENT;
+
 import cors from 'cors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
