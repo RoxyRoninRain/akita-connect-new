@@ -19,12 +19,26 @@ import uploadsRoutes from './routes/uploads';
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3001;
 
 // Middleware
 const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
 app.use(cors({
-    origin: [clientUrl, 'http://localhost:5173'],
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+
+        // Check if origin is allowed
+        const allowedOrigins = [clientUrl, 'http://localhost:5173', 'http://localhost:4173'];
+        const isLocalhost = origin.match(/^http:\/\/localhost:\d+$/);
+        const isVercel = origin.endsWith('.vercel.app');
+
+        if (allowedOrigins.indexOf(origin) !== -1 || isLocalhost || isVercel) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true
 }));
 app.use(express.json({ limit: '10mb' })); // Increase limit for base64 images
@@ -62,7 +76,3 @@ if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
         console.error('Server error:', error);
     });
 }
-
-server.on('error', (error: any) => {
-    console.error('Server error:', error);
-});

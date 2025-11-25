@@ -84,7 +84,8 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
                 const mappedLitters = dbLitters.map(mapLitterFromDb);
 
                 // Map users and populate dogs array
-                const mappedUsers = dbUsers.map((u: Record<string, any>) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const mappedUsers = dbUsers.map((u: any) => {
                     const user = mapUserFromDb(u);
                     user.dogs = mappedAkitas
                         .filter((a: Akita) => a.ownerId === user.id)
@@ -724,6 +725,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useStore = () => {
     const context = useContext(StoreContext);
     if (!context) {

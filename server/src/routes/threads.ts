@@ -25,7 +25,7 @@ router.get('/', async (req: Request, res: Response) => {
             .from('threads')
             .select(`
                 *,
-                author:profiles!threads_author_id_fkey(id, name, avatar, reputation)
+                author:profiles!threads_author_id_fkey(id, name, avatar)
             `)
             .order('is_pinned', { ascending: false })
             .order('last_active', { ascending: false })
@@ -101,7 +101,7 @@ router.get('/:id', async (req: Request, res: Response) => {
             .from('threads')
             .select(`
                 *,
-                author:profiles!threads_author_id_fkey(id, name, avatar, reputation)
+                author:profiles!threads_author_id_fkey(id, name, avatar)
             `)
             .eq('id', id)
             .single();

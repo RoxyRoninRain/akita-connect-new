@@ -13,10 +13,14 @@ export const mapUserFromDb = (dbUser: any): User => ({
     joinedDate: dbUser.joined_date,
     dogs: [], // Derived from akitas list in store
     // Optional fields
-    kennelName: dbUser.kennel_name, // Assuming we add this to DB later or use metadata
+    coverPhoto: dbUser.cover_photo,
+    gallery: dbUser.gallery || [],
+    kennelName: dbUser.kennel_name,
     experienceLevel: dbUser.experience_level,
     yearsOfExperience: dbUser.years_of_experience,
-    socialLinks: dbUser.social_links || {}
+    socialLinks: dbUser.social_links || {},
+    followers_count: dbUser.followers_count || 0,
+    following_count: dbUser.following_count || 0
 });
 
 export const mapUserToDb = (user: Partial<User>) => ({
@@ -28,10 +32,12 @@ export const mapUserToDb = (user: Partial<User>) => ({
     bio: user.bio,
     location: user.location,
     website: user.website,
-    // kennel_name: user.kennelName,
-    // experience_level: user.experienceLevel,
-    // years_of_experience: user.yearsOfExperience,
-    // social_links: user.socialLinks
+    cover_photo: user.coverPhoto,
+    gallery: user.gallery,
+    kennel_name: user.kennelName,
+    experience_level: user.experienceLevel,
+    years_of_experience: user.yearsOfExperience,
+    social_links: user.socialLinks
 });
 
 // --- AKITA MAPPERS ---

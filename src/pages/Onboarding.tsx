@@ -5,7 +5,7 @@ import type { UserRole } from '../types';
 import { Shield, Heart, Star } from 'lucide-react';
 
 export const Onboarding = () => {
-    const { currentUser } = useStore(); // In a real app, we'd update, not register again
+    const { currentUser, updateUser } = useStore();
     const navigate = useNavigate();
     const [role, setRole] = useState<UserRole | null>(null);
     const [details, setDetails] = useState({
@@ -14,10 +14,23 @@ export const Onboarding = () => {
         bio: ''
     });
 
-    const handleComplete = () => {
-        // In a real app, we would call an updateProfile function here
-        // For this mock, we'll just navigate home
-        navigate('/');
+    const handleComplete = async () => {
+        if (!currentUser || !role) return;
+
+        try {
+            // Update the user with the selected role and additional details
+            await updateUser(currentUser.id, {
+                role,
+                ...(role === 'breeder' && details.kennelName ? { kennelName: details.kennelName } : {}),
+                ...(role === 'owner' ? { experienceLevel: details.experienceLevel } : {}),
+                ...(details.bio ? { bio: details.bio } : {})
+            });
+            navigate('/');
+        } catch (error) {
+            console.error('Failed to update profile:', error);
+            // Still navigate even if update fails to avoid blocking the user
+            navigate('/');
+        }
     };
 
     return (

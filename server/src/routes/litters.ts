@@ -86,11 +86,41 @@ router.put('/:id/approve', async (req: Request, res: Response) => {
             approval_date: new Date().toISOString()
         })
         .eq('id', id)
-        .select()
+        .select('id, breeder_id, sire_id, dam_id')
         .single();
 
     if (error) {
         return res.status(500).json({ error: error.message });
+    }
+
+    // Create notification for breeder
+    if (data.breeder_id) {
+        // Get litter details for notification message
+        const { data: sireData } = await supabase
+            .from('akitas')
+            .select('call_name')
+            .eq('id', data.sire_id)
+            .single();
+
+        const { data: damData } = await supabase
+            .from('akitas')
+            .select('call_name')
+            .eq('id', data.dam_id)
+            .single();
+
+        const litterName = sireData && damData
+            ? `${sireData.call_name} x ${damData.call_name} litter`
+            : 'Your litter';
+
+        await supabase
+            .from('notifications')
+            .insert({
+                user_id: data.breeder_id,
+                type: 'litter_approved',
+                title: 'Litter Approved',
+                message: `${litterName} has been approved and is now visible in the marketplace`,
+                link: `/marketplace`
+            });
     }
 
     res.json(data);
@@ -109,11 +139,41 @@ router.put('/:id/reject', async (req: Request, res: Response) => {
             rejection_reason
         })
         .eq('id', id)
-        .select()
+        .select('id, breeder_id, sire_id, dam_id')
         .single();
 
     if (error) {
         return res.status(500).json({ error: error.message });
+    }
+
+    // Create notification for breeder
+    if (data.breeder_id) {
+        // Get litter details for notification message
+        const { data: sireData } = await supabase
+            .from('akitas')
+            .select('call_name')
+            .eq('id', data.sire_id)
+            .single();
+
+        const { data: damData } = await supabase
+            .from('akitas')
+            .select('call_name')
+            .eq('id', data.dam_id)
+            .single();
+
+        const litterName = sireData && damData
+            ? `${sireData.call_name} x ${damData.call_name} litter`
+            : 'Your litter';
+
+        await supabase
+            .from('notifications')
+            .insert({
+                user_id: data.breeder_id,
+                type: 'litter_rejected',
+                title: 'Litter Not Approved',
+                message: `${litterName} was not approved. Reason: ${rejection_reason || 'No reason provided'}`,
+                link: `/profile`
+            });
     }
 
     res.json(data);

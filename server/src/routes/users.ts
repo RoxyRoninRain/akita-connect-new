@@ -49,4 +49,23 @@ router.post('/', async (req: Request, res: Response) => {
     res.status(201).json(data);
 });
 
+// PUT /api/users/:id - Update user profile
+router.put('/:id', async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const updates = req.body;
+
+    const { data, error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+    if (error) {
+        return res.status(500).json({ error: error.message });
+    }
+
+    res.json(data);
+});
+
 export default router;

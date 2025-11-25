@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { Upload, X, Loader } from 'lucide-react';
+import { supabase } from '../../supabaseClient';
 
 interface ImageUploadProps {
     onUploadSuccess: (url: string) => void;
@@ -47,7 +48,6 @@ export const ImageUpload = ({ onUploadSuccess, uploadType, currentImage, label, 
             const base64Data = base64.split(',')[1]; // Remove data:image/...base64, prefix
 
             // Get auth token from Supabase
-            const { supabase } = await import('../../supabaseClient');
             const { data: { session } } = await supabase.auth.getSession();
 
             if (!session) {
@@ -55,7 +55,8 @@ export const ImageUpload = ({ onUploadSuccess, uploadType, currentImage, label, 
             }
 
             // Upload to server
-            const response = await fetch(`http://localhost:3000/api/uploads/${uploadType}`, {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+            const response = await fetch(`${API_URL}/uploads/${uploadType}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

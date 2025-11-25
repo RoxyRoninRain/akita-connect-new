@@ -77,6 +77,9 @@ describe('Community Component', () => {
         await user.type(screen.getByPlaceholderText("What's your topic?"), 'Test Thread');
         await user.type(screen.getByPlaceholderText("Share your thoughts..."), 'Test Content');
 
+        // Toggle image upload section
+        await user.click(screen.getByTitle('Attach image'));
+
         // Upload image
         console.log('Clicking Upload Mock Image');
         await user.click(screen.getByText('Upload Mock Image'));

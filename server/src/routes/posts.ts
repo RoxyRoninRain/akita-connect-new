@@ -17,7 +17,7 @@ router.get('/', async (req: Request, res: Response) => {
             .from('posts')
             .select(`
                 *,
-                author:profiles(id, name, avatar)
+                author:profiles!posts_author_id_fkey(id, name, avatar)
             `)
             .order('created_at', { ascending: false })
             .range(from, to);

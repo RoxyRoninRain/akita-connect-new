@@ -27,10 +27,14 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     }
 });
 
-// Log connection status in development
+// Log connection status in all environments for debugging
+console.log('🔌 Initializing Supabase Client...');
+console.log('   URL:', supabaseUrl);
+console.log('   Key Length:', supabaseAnonKey?.length);
+console.log('   Key Start:', supabaseAnonKey?.substring(0, 10) + '...');
+
 if (import.meta.env.DEV) {
     console.log('✅ Supabase client initialized');
-    console.log('   URL:', supabaseUrl);
 
     // Test connection on initialization
     supabase.from('profiles').select('count', { count: 'exact', head: true })

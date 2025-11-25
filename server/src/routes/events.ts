@@ -266,6 +266,17 @@ router.post('/:id/rsvp', async (req: Request, res: Response) => {
             return res.status(401).json({ error: 'Not authenticated' });
         }
 
+        // Get event details including organizer
+        const { data: event, error: eventError } = await adminClient
+            .from('events')
+            .select('id, title, organizer_id')
+            .eq('id', id)
+            .single();
+
+        if (eventError || !event) {
+            return res.status(404).json({ error: 'Event not found' });
+        }
+
         // Upsert RSVP (insert or update if exists)
         const { data, error } = await adminClient
             .from('event_rsvps')
@@ -281,6 +292,29 @@ router.post('/:id/rsvp', async (req: Request, res: Response) => {
 
         if (error) {
             return res.status(500).json({ error: error.message });
+        }
+
+        // Create notification for event organizer (if not RSVPing to own event)
+        if (event.organizer_id && event.organizer_id !== user.id && status === 'going') {
+            // Get user's profile for notification message
+            const { data: userProfile } = await adminClient
+                .from('profiles')
+                .select('name')
+                .eq('id', user.id)
+                .single();
+
+            const userName = userProfile?.name || 'Someone';
+
+            // Create notification
+            await adminClient
+                .from('notifications')
+                .insert({
+                    user_id: event.organizer_id,
+                    type: 'rsvp',
+                    title: 'New RSVP',
+                    message: `${userName} is attending "${event.title}"`,
+                    link: `/events/${event.id}`
+                });
         }
 
         res.json(data);

@@ -23,9 +23,10 @@ export const Login = () => {
             console.log('🔵 Navigating to home page...');
             navigate('/');
             console.log('✅ Navigation triggered');
-        } catch (err) {
+        } catch (err: any) {
             console.error('❌ Login failed:', err);
-            setError('Invalid email or password');
+            // Show specific error message if available, otherwise fallback
+            setError(err.message || 'Invalid email or password');
         } finally {
             console.log('🔵 Setting loading to false');
             setLoading(false);
@@ -99,6 +100,20 @@ export const Login = () => {
                                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand-primary hover:bg-brand-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary disabled:opacity-50"
                             >
                                 {loading ? 'Signing in...' : 'Sign in'}
+                            </button>
+                        </div>
+
+                        <div className="mt-4">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const url = import.meta.env.VITE_SUPABASE_URL;
+                                    const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+                                    alert(`Debug Info:\nURL: ${url}\nKey Length: ${key?.length}\nKey Start: ${key?.substring(0, 10)}...`);
+                                }}
+                                className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary"
+                            >
+                                🐞 Show Debug Info
                             </button>
                         </div>
                     </form>
