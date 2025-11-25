@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon src/index.ts",
     "build": "node -e \"require('fs').rmSync('dist-server', {recursive: true, force: true})\" && tsc",
-    "start": "node dist-server/index.js",
+    "start": "ts-node src/index.ts",
     "seed": "ts-node src/seed.ts",
     "test:connection": "ts-node src/testConnection.ts",
     "setup:storage": "ts-node src/scripts/setupStorage.ts"
