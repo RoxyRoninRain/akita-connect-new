@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../context/StoreContext';
+import type { UserRole } from '../types';
 import { MapPin, Calendar, Globe, Shield, Award, ChevronDown, ChevronUp, X, Upload, Plus, Heart, MessageSquare, Share2, Instagram, Facebook, Twitter } from 'lucide-react';
 import { Lightbox } from '../components/common/Lightbox';
 import { CreatePost } from '../components/feed/CreatePost';
@@ -26,6 +27,7 @@ export const Profile = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editForm, setEditForm] = useState({
         name: '',
+        role: 'enthusiast' as UserRole,
         kennelName: '',
         bio: '',
         location: '',
@@ -143,6 +145,7 @@ export const Profile = () => {
     const handleEditClick = () => {
         setEditForm({
             name: user.name,
+            role: user.role,
             kennelName: user.kennelName || '',
             bio: user.bio || '',
             location: user.location || '',
@@ -315,7 +318,21 @@ export const Profile = () => {
                                             <label className="block text-sm font-medium text-gray-700">Name</label>
                                             <input type="text" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm" />
                                         </div>
-                                        {isBreeder && (
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Profile Type</label>
+                                            <select
+                                                value={editForm.role}
+                                                onChange={(e) => setEditForm({ ...editForm, role: e.target.value as UserRole })}
+                                                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm"
+                                            >
+                                                <option value="enthusiast">Enthusiast - I love Akitas and want to learn more</option>
+                                                <option value="owner">Owner - I own an Akita</option>
+                                                <option value="breeder">Breeder - I breed Akitas</option>
+                                                <option value="moderator">Moderator</option>
+                                            </select>
+                                            <p className="mt-1 text-xs text-gray-500">Change your profile type as your role evolves</p>
+                                        </div>
+                                        {editForm.role === 'breeder' && (
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700">Kennel Name</label>
                                                 <input type="text" value={editForm.kennelName} onChange={(e) => setEditForm({ ...editForm, kennelName: e.target.value })} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm" />
