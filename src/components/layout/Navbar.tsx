@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Search, Bell, MessageSquare, Menu, LogOut } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import { SearchResults } from '../SearchResults';
@@ -7,12 +7,20 @@ import { SearchResults } from '../SearchResults';
 export const Navbar = () => {
     const { currentUser, logout, unreadCount } = useStore();
     const navigate = useNavigate();
+    const location = useLocation();
     const [searchQuery, setSearchQuery] = useState('');
     const [showSearchResults, setShowSearchResults] = useState(false);
 
     const handleLogout = () => {
         logout();
         navigate('/login');
+    };
+
+    const getLinkClass = (path: string) => {
+        const isActive = location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
+        return isActive
+            ? "border-brand-primary text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+            : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium";
     };
 
     return (
@@ -28,13 +36,13 @@ export const Navbar = () => {
                             </div>
                         </Link>
                         <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                            <Link to="/" className="border-brand-primary text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            <Link to="/" className={getLinkClass('/')}>
                                 Feed
                             </Link>
-                            <Link to="/marketplace" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            <Link to="/marketplace" className={getLinkClass('/marketplace')}>
                                 Marketplace
                             </Link>
-                            <Link to="/hub" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            <Link to="/hub" className={getLinkClass('/hub')}>
                                 Community
                             </Link>
                         </div>
