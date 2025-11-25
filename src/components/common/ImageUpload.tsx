@@ -43,10 +43,6 @@ export const ImageUpload = ({ onUploadSuccess, uploadType, currentImage, label, 
             };
             reader.readAsDataURL(file);
 
-            // Convert to base64 for upload
-            const base64 = await convertToBase64(file);
-            const base64Data = base64.split(',')[1]; // Remove data:image/...base64, prefix
-
             // Get auth token from Supabase
             const { data: { session } } = await supabase.auth.getSession();
 
@@ -57,17 +53,18 @@ export const ImageUpload = ({ onUploadSuccess, uploadType, currentImage, label, 
             // Upload to server - ensure /api is appended correctly
             const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
             const API_URL = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('fileName', file.name);
+            formData.append('contentType', file.type);
+
             const response = await fetch(`${API_URL}/uploads/${uploadType}`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'Authorization': `Bearer ${session.access_token}`
                 },
-                body: JSON.stringify({
-                    file: base64Data,
-                    fileName: file.name,
-                    contentType: file.type
-                })
+                body: formData
             });
 
             if (!response.ok) {
@@ -83,15 +80,6 @@ export const ImageUpload = ({ onUploadSuccess, uploadType, currentImage, label, 
             setError(err.message || 'Failed to upload image');
             setUploading(false);
         }
-    };
-
-    const convertToBase64 = (file: File): Promise<string> => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-        });
     };
 
     const handleRemove = () => {

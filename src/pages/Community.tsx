@@ -254,7 +254,15 @@ export const Community = () => {
                         return (
                             <div key={thread.id} className="bg-white shadow rounded-lg p-4 mb-4">
                                 <div className="flex justify-between items-center mb-2">
-                                    <h2 className="text-lg font-semibold"><Link to={`/thread/${thread.id}`} className="text-brand-primary hover:underline">{thread.title}</Link></h2>
+                                    <h2 className="text-lg font-semibold">
+                                        <Link
+                                            to={`/thread/${thread.id}`}
+                                            className="text-brand-primary hover:underline"
+                                            onMouseEnter={() => import('./ThreadDetail')}
+                                        >
+                                            {thread.title}
+                                        </Link>
+                                    </h2>
                                     <div className="flex items-center space-x-2">
                                         <button onClick={() => toggleThreadLike(thread.id)} className="text-gray-500 hover:text-brand-primary">
                                             <ThumbsUp className="h-4 w-4" />

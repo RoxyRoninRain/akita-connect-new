@@ -36,13 +36,25 @@ export const Navbar = () => {
                             </div>
                         </Link>
                         <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                            <Link to="/" className={getLinkClass('/')}>
+                            <Link
+                                to="/"
+                                className={getLinkClass('/')}
+                                onMouseEnter={() => import('../../pages/Home')}
+                            >
                                 Feed
                             </Link>
-                            <Link to="/marketplace" className={getLinkClass('/marketplace')}>
+                            <Link
+                                to="/marketplace"
+                                className={getLinkClass('/marketplace')}
+                                onMouseEnter={() => import('../../pages/Marketplace')}
+                            >
                                 Marketplace
                             </Link>
-                            <Link to="/hub" className={getLinkClass('/hub')}>
+                            <Link
+                                to="/hub"
+                                className={getLinkClass('/hub')}
+                                onMouseEnter={() => import('../../pages/CommunityHub')}
+                            >
                                 Community
                             </Link>
                         </div>

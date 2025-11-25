@@ -1,10 +1,19 @@
 import { Router, Request, Response } from 'express';
+import multer from 'multer';
 import { getSupabase, supabase } from '../db';
 
 const router = Router();
 
+// Configure multer for memory storage
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB limit
+    },
+});
+
 // POST /api/uploads/avatar - Upload user avatar
-router.post('/avatar', async (req: Request, res: Response) => {
+router.post('/avatar', upload.single('file'), async (req: Request, res: Response): Promise<any> => {
     const userClient = getSupabase(req.headers.authorization);
 
     try {
@@ -14,21 +23,20 @@ router.post('/avatar', async (req: Request, res: Response) => {
             return res.status(401).json({ error: 'Unauthorized' });
         }
 
-        // Check if file data is provided in body (base64)
-        const { file, fileName, contentType } = req.body;
-        if (!file || !fileName) {
-            return res.status(400).json({ error: 'File data and fileName required' });
+        if (!req.file) {
+            return res.status(400).json({ error: 'File required' });
         }
 
-        // Convert base64 to buffer
-        const fileBuffer = Buffer.from(file, 'base64');
+        const fileBuffer = req.file.buffer;
+        const fileName = req.body.fileName || req.file.originalname;
+        const contentType = req.file.mimetype;
 
         // Upload to Supabase Storage
         const filePath = `${user.id}/${Date.now()}-${fileName}`;
         const { data, error } = await supabase.storage
             .from('avatars')
             .upload(filePath, fileBuffer, {
-                contentType: contentType || 'image/jpeg',
+                contentType: contentType,
                 upsert: true
             });
 
@@ -50,7 +58,7 @@ router.post('/avatar', async (req: Request, res: Response) => {
 });
 
 // POST /api/uploads/post-image - Upload post image
-router.post('/post-image', async (req: Request, res: Response) => {
+router.post('/post-image', upload.single('file'), async (req: Request, res: Response): Promise<any> => {
     const userClient = getSupabase(req.headers.authorization);
 
     try {
@@ -60,20 +68,20 @@ router.post('/post-image', async (req: Request, res: Response) => {
             return res.status(401).json({ error: 'Unauthorized' });
         }
 
-        const { file, fileName, contentType } = req.body;
-        if (!file || !fileName) {
-            return res.status(400).json({ error: 'File data and fileName required' });
+        if (!req.file) {
+            return res.status(400).json({ error: 'File required' });
         }
 
-        // Convert base64 to buffer
-        const fileBuffer = Buffer.from(file, 'base64');
+        const fileBuffer = req.file.buffer;
+        const fileName = req.body.fileName || req.file.originalname;
+        const contentType = req.file.mimetype;
 
         // Upload to Supabase Storage
         const filePath = `${user.id}/${Date.now()}-${fileName}`;
         const { data, error } = await supabase.storage
             .from('posts')
             .upload(filePath, fileBuffer, {
-                contentType: contentType || 'image/jpeg'
+                contentType: contentType
             });
 
         if (error) {
@@ -94,7 +102,7 @@ router.post('/post-image', async (req: Request, res: Response) => {
 });
 
 // DELETE /api/uploads/post-image/:path - Delete post image
-router.delete('/post-image/:userId/:filename', async (req: Request, res: Response) => {
+router.delete('/post-image/:userId/:filename', async (req: Request, res: Response): Promise<any> => {
     const userClient = getSupabase(req.headers.authorization);
 
     try {
@@ -124,7 +132,7 @@ router.delete('/post-image/:userId/:filename', async (req: Request, res: Respons
 });
 
 // POST /api/uploads/thread-image - Upload thread/reply image
-router.post('/thread-image', async (req: Request, res: Response) => {
+router.post('/thread-image', upload.single('file'), async (req: Request, res: Response): Promise<any> => {
     const userClient = getSupabase(req.headers.authorization);
 
     try {
@@ -133,18 +141,19 @@ router.post('/thread-image', async (req: Request, res: Response) => {
             return res.status(401).json({ error: 'Unauthorized' });
         }
 
-        const { file, fileName, contentType } = req.body;
-        if (!file || !fileName) {
-            return res.status(400).json({ error: 'File data and fileName required' });
+        if (!req.file) {
+            return res.status(400).json({ error: 'File required' });
         }
 
-        const fileBuffer = Buffer.from(file, 'base64');
+        const fileBuffer = req.file.buffer;
+        const fileName = req.body.fileName || req.file.originalname;
+        const contentType = req.file.mimetype;
         const filePath = `${user.id}/${Date.now()}-${fileName}`;
 
         const { data, error } = await supabase.storage
             .from('threads')
             .upload(filePath, fileBuffer, {
-                contentType: contentType || 'image/jpeg'
+                contentType: contentType
             });
 
         if (error) {
@@ -163,7 +172,7 @@ router.post('/thread-image', async (req: Request, res: Response) => {
 });
 
 // POST /api/uploads/message-attachment - Upload message attachment
-router.post('/message-attachment', async (req: Request, res: Response) => {
+router.post('/message-attachment', upload.single('file'), async (req: Request, res: Response): Promise<any> => {
     const userClient = getSupabase(req.headers.authorization);
 
     try {
@@ -172,18 +181,19 @@ router.post('/message-attachment', async (req: Request, res: Response) => {
             return res.status(401).json({ error: 'Unauthorized' });
         }
 
-        const { file, fileName, contentType } = req.body;
-        if (!file || !fileName) {
-            return res.status(400).json({ error: 'File data and fileName required' });
+        if (!req.file) {
+            return res.status(400).json({ error: 'File required' });
         }
 
-        const fileBuffer = Buffer.from(file, 'base64');
+        const fileBuffer = req.file.buffer;
+        const fileName = req.body.fileName || req.file.originalname;
+        const contentType = req.file.mimetype;
         const filePath = `${user.id}/${Date.now()}-${fileName}`;
 
         const { data, error } = await supabase.storage
             .from('messages')
             .upload(filePath, fileBuffer, {
-                contentType: contentType || 'image/jpeg'
+                contentType: contentType
             });
 
         if (error) {
@@ -202,7 +212,7 @@ router.post('/message-attachment', async (req: Request, res: Response) => {
 });
 
 // POST /api/uploads/akita-image - Upload akita image
-router.post('/akita-image', async (req: Request, res: Response) => {
+router.post('/akita-image', upload.single('file'), async (req: Request, res: Response): Promise<any> => {
     const userClient = getSupabase(req.headers.authorization);
 
     try {
@@ -211,18 +221,19 @@ router.post('/akita-image', async (req: Request, res: Response) => {
             return res.status(401).json({ error: 'Unauthorized' });
         }
 
-        const { file, fileName, contentType } = req.body;
-        if (!file || !fileName) {
-            return res.status(400).json({ error: 'File data and fileName required' });
+        if (!req.file) {
+            return res.status(400).json({ error: 'File required' });
         }
 
-        const fileBuffer = Buffer.from(file, 'base64');
+        const fileBuffer = req.file.buffer;
+        const fileName = req.body.fileName || req.file.originalname;
+        const contentType = req.file.mimetype;
         const filePath = `${user.id}/${Date.now()}-${fileName}`;
 
         const { data, error } = await supabase.storage
             .from('akitas')
             .upload(filePath, fileBuffer, {
-                contentType: contentType || 'image/jpeg'
+                contentType: contentType
             });
 
         if (error) {
