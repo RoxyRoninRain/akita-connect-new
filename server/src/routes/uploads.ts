@@ -26,13 +26,13 @@ router.post('/avatar', upload.single('file'), async (req: Request, res: Response
             return res.status(401).json({ error: 'Unauthorized' });
         }
 
-        if (!req.file) {
+        if (!(req as any).file) {
             return res.status(400).json({ error: 'File required' });
         }
 
-        const fileBuffer = req.file.buffer;
-        const fileName = req.body.fileName || req.file.originalname;
-        const contentType = req.file.mimetype;
+        const fileBuffer = (req as any).file.buffer;
+        const fileName = req.body.fileName || (req as any).file.originalname;
+        const contentType = (req as any).file.mimetype;
 
         // Upload to Supabase Storage
         const filePath = `${user.id}/${Date.now()}-${fileName}`;
@@ -71,13 +71,13 @@ router.post('/post-image', upload.single('file'), async (req: Request, res: Resp
             return res.status(401).json({ error: 'Unauthorized' });
         }
 
-        if (!req.file) {
+        if (!(req as any).file) {
             return res.status(400).json({ error: 'File required' });
         }
 
-        const fileBuffer = req.file.buffer;
-        const fileName = req.body.fileName || req.file.originalname;
-        const contentType = req.file.mimetype;
+        const fileBuffer = (req as any).file.buffer;
+        const fileName = req.body.fileName || (req as any).file.originalname;
+        const contentType = (req as any).file.mimetype;
 
         // Upload to Supabase Storage
         const filePath = `${user.id}/${Date.now()}-${fileName}`;
@@ -144,13 +144,13 @@ router.post('/thread-image', upload.single('file'), async (req: Request, res: Re
             return res.status(401).json({ error: 'Unauthorized' });
         }
 
-        if (!req.file) {
+        if (!(req as any).file) {
             return res.status(400).json({ error: 'File required' });
         }
 
-        const fileBuffer = req.file.buffer;
-        const fileName = req.body.fileName || req.file.originalname;
-        const contentType = req.file.mimetype;
+        const fileBuffer = (req as any).file.buffer;
+        const fileName = req.body.fileName || (req as any).file.originalname;
+        const contentType = (req as any).file.mimetype;
         const filePath = `${user.id}/${Date.now()}-${fileName}`;
 
         const { data, error } = await supabase.storage
@@ -184,13 +184,13 @@ router.post('/message-attachment', upload.single('file'), async (req: Request, r
             return res.status(401).json({ error: 'Unauthorized' });
         }
 
-        if (!req.file) {
+        if (!(req as any).file) {
             return res.status(400).json({ error: 'File required' });
         }
 
-        const fileBuffer = req.file.buffer;
-        const fileName = req.body.fileName || req.file.originalname;
-        const contentType = req.file.mimetype;
+        const fileBuffer = (req as any).file.buffer;
+        const fileName = req.body.fileName || (req as any).file.originalname;
+        const contentType = (req as any).file.mimetype;
         const filePath = `${user.id}/${Date.now()}-${fileName}`;
 
         const { data, error } = await supabase.storage
@@ -224,13 +224,13 @@ router.post('/akita-image', upload.single('file'), async (req: Request, res: Res
             return res.status(401).json({ error: 'Unauthorized' });
         }
 
-        if (!req.file) {
+        if (!(req as any).file) {
             return res.status(400).json({ error: 'File required' });
         }
 
-        const fileBuffer = req.file.buffer;
-        const fileName = req.body.fileName || req.file.originalname;
-        const contentType = req.file.mimetype;
+        const fileBuffer = (req as any).file.buffer;
+        const fileName = req.body.fileName || (req as any).file.originalname;
+        const contentType = (req as any).file.mimetype;
         const filePath = `${user.id}/${Date.now()}-${fileName}`;
 
         const { data, error } = await supabase.storage
