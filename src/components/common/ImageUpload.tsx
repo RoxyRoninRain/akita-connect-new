@@ -55,7 +55,7 @@ export const ImageUpload = ({ onUploadSuccess, uploadType, currentImage, label, 
             }
 
             // Upload to server
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
             const response = await fetch(`${API_URL}/uploads/${uploadType}`, {
                 method: 'POST',
                 headers: {

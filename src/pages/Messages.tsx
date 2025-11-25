@@ -44,10 +44,10 @@ export const Messages = () => {
 
     // Redirect non-authenticated users
     useEffect(() => {
-        if (!currentUser) {
+        if (!loading && !currentUser) {
             navigate('/login?redirect=/messages');
         }
-    }, [currentUser, navigate]);
+    }, [currentUser, loading, navigate]);
 
     // Load conversations
     useEffect(() => {

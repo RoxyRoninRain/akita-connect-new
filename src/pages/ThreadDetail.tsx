@@ -4,15 +4,42 @@ import { useStore } from '../context/StoreContext';
 import { ArrowLeft, MessageSquare, Clock, Pin, Tag, ThumbsUp, Paperclip, X } from 'lucide-react';
 import { ImageUpload } from '../components/common/ImageUpload';
 
+import { threadApi } from '../api/client';
+import type { Thread } from '../types';
+
 export const ThreadDetail = () => {
     const { id } = useParams<{ id: string }>();
     const { threads, users, addThreadReply, toggleThreadLike, toggleThreadPin, currentUser } = useStore();
     const [replyContent, setReplyContent] = useState('');
     const [replyImages, setReplyImages] = useState<string[]>([]);
     const [showImageUpload, setShowImageUpload] = useState(false);
+    const [activeThread, setActiveThread] = useState<Thread | null>(null);
+    const [loading, setLoading] = useState(false);
 
-    const thread = threads.find(t => t.id === id);
+    // Fetch full thread details on mount
+    React.useEffect(() => {
+        const fetchThread = async () => {
+            if (!id) return;
+            setLoading(true);
+            try {
+                const data = await threadApi.getById(id);
+                setActiveThread(data);
+            } catch (error) {
+                console.error('Failed to fetch thread details:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchThread();
+    }, [id]);
+
+    // Use activeThread (full details) if available, otherwise fallback to store (summary)
+    const thread = activeThread || threads.find(t => t.id === id);
     const author = thread ? users.find(u => u.id === thread.authorId) : null;
+
+    if (loading && !thread) {
+        return <div className="p-8 text-center">Loading discussion...</div>;
+    }
 
     if (!thread) {
         return (
@@ -27,13 +54,16 @@ export const ThreadDetail = () => {
 
     const getUser = (userId: string) => users.find(u => u.id === userId);
 
-    const handleReplySubmit = (e: React.FormEvent) => {
+    const handleReplySubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (replyContent.trim() && thread) {
-            addThreadReply(thread.id, replyContent, replyImages);
+            await addThreadReply(thread.id, replyContent, replyImages);
             setReplyContent('');
             setReplyImages([]);
             setShowImageUpload(false);
+            // Refresh thread to get new reply
+            const updated = await threadApi.getById(thread.id);
+            setActiveThread(updated);
         }
     };
 

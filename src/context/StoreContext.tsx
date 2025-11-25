@@ -96,7 +96,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
                 setAkitas(mappedAkitas);
                 setUsers(mappedUsers);
                 setLitters(mappedLitters);
-                setThreads(dbThreads);
+                setThreads(dbThreads.map((t: any) => ({ ...t, replies: t.replies || [] })));
                 setPosts(dbPosts);
 
                 // Try to fetch events (may fail if table doesn't exist yet)
@@ -178,16 +178,34 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
             if (data.user) {
                 console.log('✅ Login successful, fetching profile for:', data.user.email);
                 // Fetch user profile
-                const userProfile = await userApi.getById(data.user.id).catch((err) => {
+                let userProfile = await userApi.getById(data.user.id).catch((err) => {
                     console.error('❌ Failed to fetch profile after login:', err);
                     return null;
                 });
 
                 if (!userProfile) {
-                    console.error('❌ Critical Error: Profile not found for user:', data.user.id);
-                    // We do NOT auto-create here anymore to avoid masking backend issues.
-                    // If the profile is missing, it means registration failed or data is corrupted.
-                    throw new Error('User profile not found. Please contact support.');
+                    console.warn('⚠️ Profile not found for user, attempting to create one...', data.user.id);
+                    try {
+                        const newProfile = {
+                            id: data.user.id,
+                            email: data.user.email,
+                            name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',
+                            avatar: data.user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${data.user.email?.split('@')[0]}&background=random`,
+                            role: 'user',
+                            joined_date: new Date().toISOString()
+                        };
+
+                        const createdProfile = await userApi.create(newProfile);
+                        if (createdProfile) {
+                            console.log('✅ Profile created successfully during login fallback');
+                            userProfile = createdProfile;
+                        } else {
+                            throw new Error('Failed to create profile during fallback');
+                        }
+                    } catch (createError) {
+                        console.error('❌ Critical Error: Failed to create profile fallback:', createError);
+                        throw new Error('User profile not found and could not be created. Please contact support.');
+                    }
                 }
 
                 const mappedUser = mapUserFromDb(userProfile);
