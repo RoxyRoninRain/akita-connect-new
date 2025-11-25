@@ -66,9 +66,9 @@ app.use('/api/auth', authRoutes);
 
 app.get('/api/version', (req: Request, res: Response) => {
     res.json({
-        version: '1.0.3',
+        version: '1.0.4',
         timestamp: new Date().toISOString(),
-        deployId: 'ts-fix-applied'
+        deployId: 'multer-downgrade-fix-v2'
     });
 });
 
