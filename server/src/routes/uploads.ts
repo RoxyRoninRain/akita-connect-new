@@ -1,8 +1,11 @@
 import { Router, Request, Response } from 'express';
+
 import multer from 'multer';
 import { getSupabase, supabase } from '../db';
 
 const router = Router();
+
+// Force redeploy with multer fix
 
 // Configure multer for memory storage
 const upload = multer({

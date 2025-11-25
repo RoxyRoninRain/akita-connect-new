@@ -15,6 +15,8 @@ import followsRoutes from './routes/follows';
 import notificationsRoutes from './routes/notifications';
 import marketplaceRoutes from './routes/marketplace';
 import uploadsRoutes from './routes/uploads';
+
+
 import authRoutes from './routes/auth';
 
 dotenv.config();
