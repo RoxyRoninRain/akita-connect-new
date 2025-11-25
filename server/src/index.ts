@@ -63,8 +63,17 @@ app.use('/api/marketplace', marketplaceRoutes);
 app.use('/api/uploads', uploadsRoutes);
 app.use('/api/auth', authRoutes);
 
+app.get('/api/version', (req: Request, res: Response) => {
+    res.json({
+        version: '1.0.1',
+        timestamp: new Date().toISOString(),
+        deployId: 'multer-fix-verified'
+    });
+});
+
 app.get('/', (req: Request, res: Response) => {
-    res.send('Akita Connect API is running (v2)');
+    console.log('DEBUG: Root endpoint hit. Version: 1.0.1');
+    res.send('Akita Connect API is running (v2) - Version 1.0.1');
 });
 
 // Export app for Vercel
