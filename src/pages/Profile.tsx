@@ -8,12 +8,14 @@ import { CreatePost } from '../components/feed/CreatePost';
 import { ImageUpload } from '../components/ImageUpload';
 import { FollowButton } from '../components/common/FollowButton';
 import { UserListModal } from '../components/profile/UserListModal';
+import { BadgeDisplay } from '../components/BadgeDisplay';
+import { BadgeRequestModal } from '../components/BadgeRequestModal';
 import clsx from 'clsx';
 
 export const Profile = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { currentUser, users, akitas, litters, posts, updateUser, addAkita, addLitter, toggleLike, addComment } = useStore();
+    const { currentUser, users, akitas, litters, posts, updateUser, addAkita, addLitter, toggleLike, addComment, requestUserBadge } = useStore();
     const [activeTab, setActiveTab] = useState<'feed' | 'overview' | 'kennel' | 'litters' | 'gallery'>('feed');
 
     // Lightbox state
@@ -79,6 +81,15 @@ export const Profile = () => {
     // User List Modal State
     const [userListModalOpen, setUserListModalOpen] = useState(false);
     const [userListModalType, setUserListModalType] = useState<'followers' | 'following'>('followers');
+
+    // Badge Request Modal State
+    const [isBadgeRequestModalOpen, setIsBadgeRequestModalOpen] = useState(false);
+
+    // Handle badge request submission
+    const handleBadgeRequest = async (badgeType: string, proofDocument?: string, notes?: string) => {
+        if (!user) return;
+        await requestUserBadge(user.id, badgeType, proofDocument, notes);
+    };
 
     // If no ID is provided, show current user's profile
     const profileId = id || currentUser?.id;
@@ -287,6 +298,15 @@ export const Profile = () => {
                 onClose={() => setUserListModalOpen(false)}
                 title={userListModalType === 'followers' ? 'Followers' : 'Following'}
                 endpoint={`/api/follows/${user.id}/${userListModalType}`}
+            />
+
+            <BadgeRequestModal
+                isOpen={isBadgeRequestModalOpen}
+                onClose={() => setIsBadgeRequestModalOpen(false)}
+                type="user"
+                entityId={user.id}
+                entityName={user.name}
+                onSubmit={handleBadgeRequest}
             />
 
             {/* Edit Profile Modal */}
@@ -759,6 +779,25 @@ export const Profile = () => {
                                     </div>
                                 </div>
                             )}
+
+                            {/* Badges Section */}
+                            <div className="mt-6 border-t pt-4">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h4 className="text-sm font-medium text-gray-900">Badges</h4>
+                                    {isOwnProfile && (
+                                        <button
+                                            onClick={() => setIsBadgeRequestModalOpen(true)}
+                                            className="text-sm text-brand-primary hover:text-brand-secondary font-medium"
+                                        >
+                                            + Request Badge
+                                        </button>
+                                    )}
+                                </div>
+                                <BadgeDisplay badges={user.badges} type="user" />
+                                {(!user.badges || user.badges.filter(b => b.status === 'approved').length === 0) && (
+                                    <p className="text-sm text-gray-500">No badges yet</p>
+                                )}
+                            </div>
                         </div>
                     )
                 }

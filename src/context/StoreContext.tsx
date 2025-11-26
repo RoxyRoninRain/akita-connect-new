@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import type { User, Akita, Litter, Post, Thread, Event, Reply, Notification, Puppy } from '../types';
+import type { User, Akita, Litter, Post, Thread, Event, Reply, Notification, Puppy, UserBadge, AkitaBadge } from '../types';
 import { MOCK_POSTS, MOCK_THREADS } from './mockData';
 import { akitaApi, userApi, litterApi, threadApi, postApi, eventApi, notificationsApi, authApi } from '../api/client';
 import { mapAkitaFromDb, mapUserFromDb, mapLitterFromDb, mapAkitaToDb, mapLitterToDb, mapUserToDb, mapEventFromDb, mapEventToDb } from '../utils/mappers';
@@ -48,6 +48,12 @@ interface StoreContextType {
     markAsRead: (id: string) => void;
     markAllAsRead: () => void;
     deleteNotification: (id: string) => void;
+
+    // Badge Management
+    requestUserBadge: (userId: string, badgeType: string, proofDocument?: string, notes?: string) => Promise<void>;
+    requestAkitaBadge: (akitaId: string, badgeType: string, proofDocument?: string, notes?: string, dateEarned?: string) => Promise<void>;
+    approveBadge: (badgeId: string, type: 'user' | 'akita') => Promise<void>;
+    rejectBadge: (badgeId: string, type: 'user' | 'akita', reason: string) => Promise<void>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -690,6 +696,128 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    // Badge Management Methods
+    const requestUserBadge = async (userId: string, badgeType: string, proofDocument?: string, notes?: string) => {
+        if (!currentUser) return;
+        try {
+            const newBadge: UserBadge = {
+                id: `badge_${Date.now()}`,
+                userId,
+                type: badgeType,
+                status: 'pending',
+                requestedAt: new Date().toISOString(),
+                proofDocument,
+                notes
+            };
+
+            // Update user with new badge
+            setUsers(users.map(u => {
+                if (u.id === userId) {
+                    return { ...u, badges: [...(u.badges || []), newBadge] };
+                }
+                return u;
+            }));
+
+            if (currentUser.id === userId) {
+                setCurrentUser({ ...currentUser, badges: [...(currentUser.badges || []), newBadge] });
+            }
+
+            // TODO: When API is ready, call API: await badgeApi.requestUserBadge(userId, { badgeType, proofDocument, notes });
+        } catch (error) {
+            console.error('Failed to request user badge:', error);
+            throw error;
+        }
+    };
+
+    const requestAkitaBadge = async (akitaId: string, badgeType: string, proofDocument?: string, notes?: string, dateEarned?: string) => {
+        if (!currentUser) return;
+        try {
+            const newBadge: AkitaBadge = {
+                id: `badge_${Date.now()}`,
+                akitaId,
+                type: badgeType,
+                status: 'pending',
+                requestedAt: new Date().toISOString(),
+                proofDocument,
+                notes,
+                dateEarned
+            };
+
+            // Update akita with new badge
+            setAkitas(akitas.map(a => {
+                if (a.id === akitaId) {
+                    return { ...a, badges: [...(a.badges || []), newBadge] };
+                }
+                return a;
+            }));
+
+            // TODO: When API is ready, call API: await badgeApi.requestAkitaBadge(akitaId, { badgeType, proofDocument, notes, dateEarned });
+        } catch (error) {
+            console.error('Failed to request akita badge:', error);
+            throw error;
+        }
+    };
+
+    const approveBadge = async (badgeId: string, type: 'user' | 'akita') => {
+        if (!currentUser || currentUser.role !== 'moderator') return;
+        try {
+            if (type === 'user') {
+                setUsers(users.map(u => ({
+                    ...u,
+                    badges: u.badges?.map(b =>
+                        b.id === badgeId
+                            ? { ...b, status: 'approved' as const, approvedAt: new Date().toISOString(), approvedBy: currentUser.id }
+                            : b
+                    )
+                })));
+            } else {
+                setAkitas(akitas.map(a => ({
+                    ...a,
+                    badges: a.badges?.map(b =>
+                        b.id === badgeId
+                            ? { ...b, status: 'approved' as const, approvedAt: new Date().toISOString(), approvedBy: currentUser.id }
+                            : b
+                    )
+                })));
+            }
+
+            // TODO: When API is ready, call API: await badgeApi.approveBadge(badgeId, type);
+        } catch (error) {
+            console.error('Failed to approve badge:', error);
+            throw error;
+        }
+    };
+
+    const rejectBadge = async (badgeId: string, type: 'user' | 'akita', reason: string) => {
+        if (!currentUser || currentUser.role !== 'moderator') return;
+        try {
+            if (type === 'user') {
+                setUsers(users.map(u => ({
+                    ...u,
+                    badges: u.badges?.map(b =>
+                        b.id === badgeId
+                            ? { ...b, status: 'rejected' as const, rejectedAt: new Date().toISOString(), rejectedBy: currentUser.id, rejectionReason: reason }
+                            : b
+                    )
+                })));
+            } else {
+                setAkitas(akitas.map(a => ({
+                    ...a,
+                    badges: a.badges?.map(b =>
+                        b.id === badgeId
+                            ? { ...b, status: 'rejected' as const, rejectedAt: new Date().toISOString(), rejectedBy: currentUser.id, rejectionReason: reason }
+                            : b
+                    )
+                })));
+            }
+
+            // TODO: When API is ready, call API: await badgeApi.rejectBadge(badgeId, type, reason);
+        } catch (error) {
+            console.error('Failed to reject badge:', error);
+            throw error;
+        }
+    };
+
     const unreadCount = notifications.filter(n => !n.read).length;
 
     return (
@@ -728,7 +856,11 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
             unreadCount,
             markAsRead,
             markAllAsRead,
-            deleteNotification
+            deleteNotification,
+            requestUserBadge,
+            requestAkitaBadge,
+            approveBadge,
+            rejectBadge
         }}>
             {children}
         </StoreContext.Provider>

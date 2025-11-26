@@ -24,7 +24,44 @@ export interface User {
     followers_count?: number;
     following_count?: number;
     coverPhoto?: string;
+    badges?: UserBadge[]; // User badges
 }
+
+export type UserBadgeType = 'ACA Member' | 'Breeder of Merit' | 'Judge' | 'Heart Certified' | 'Rescue Volunteer' | 'Show Handler' | 'Therapy Dog Handler';
+export type AkitaBadgeType = 'ROM' | 'BISS' | 'BIS' | 'Grand Champion' | 'Champion' | 'Therapy Dog' | 'CGC' | 'Service Dog';
+export type BadgeStatus = 'pending' | 'approved' | 'rejected';
+
+export interface UserBadge {
+    id: string;
+    userId: string;
+    type: UserBadgeType | string; // Allow custom badges
+    status: BadgeStatus;
+    requestedAt: string;
+    approvedAt?: string;
+    approvedBy?: string; // Moderator user ID
+    rejectedAt?: string;
+    rejectedBy?: string; // Moderator user ID
+    rejectionReason?: string;
+    proofDocument?: string; // URL to uploaded proof
+    notes?: string;
+}
+
+export interface AkitaBadge {
+    id: string;
+    akitaId: string;
+    type: AkitaBadgeType | string; // Allow custom badges
+    status: BadgeStatus;
+    requestedAt: string;
+    approvedAt?: string;
+    approvedBy?: string; // Moderator user ID
+    rejectedAt?: string;
+    rejectedBy?: string; // Moderator user ID
+    rejectionReason?: string;
+    proofDocument?: string; // URL to uploaded certificate/proof
+    dateEarned?: string; // Date the title/badge was earned
+    notes?: string;
+}
+
 
 export interface HealthRecord {
     id?: string;
@@ -52,6 +89,7 @@ export interface Akita {
     healthRecords: HealthRecord[];
     images: string[];
     bio?: string;
+    badges?: AkitaBadge[]; // Akita badges
 }
 
 export interface Puppy {

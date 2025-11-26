@@ -21,6 +21,8 @@ const EventDetail = React.lazy(() => import('./pages/EventDetail').then(module =
 const Marketplace = React.lazy(() => import('./pages/Marketplace').then(module => ({ default: module.Marketplace })));
 const ThreadDetail = React.lazy(() => import('./pages/ThreadDetail').then(module => ({ default: module.ThreadDetail })));
 const ModeratorDashboard = React.lazy(() => import('./pages/ModeratorDashboard').then(module => ({ default: module.ModeratorDashboard })));
+const Landing = React.lazy(() => import('./pages/Landing').then(module => ({ default: module.Landing })));
+const Contact = React.lazy(() => import('./pages/Contact').then(module => ({ default: module.Contact })));
 
 function App() {
   return (
@@ -32,6 +34,7 @@ function App() {
             <Route path="/signup" element={<Signup />} />
             <Route path="/onboarding" element={<Onboarding />} />
 
+            <Route path="/landing" element={<Landing />} />
             <Route path="/" element={<Layout />}>
               <Route index element={<Home />} />
               <Route path="messages" element={<Messages />} />
@@ -49,6 +52,7 @@ function App() {
               <Route path="directory" element={<Directory />} />
               <Route path="notifications" element={<Notifications />} />
               <Route path="moderator" element={<ModeratorDashboard />} />
+              <Route path="contact" element={<Contact />} />
             </Route>
           </Routes>
         </Suspense>

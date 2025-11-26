@@ -5,6 +5,19 @@ import { useStore } from '../../context/StoreContext';
 
 export const Sidebar = () => {
     const { akitas } = useStore();
+
+    // Calculate actual health database statistics
+    const ofaRecordsCount = akitas.reduce((count, dog) => {
+        return count + dog.healthRecords.filter(record =>
+            record.type.startsWith('OFA')
+        ).length;
+    }, 0);
+
+    const vglProfilesCount = akitas.reduce((count, dog) => {
+        return count + dog.healthRecords.filter(record =>
+            record.type === 'VGL'
+        ).length;
+    }, 0);
     return (
         <div className="hidden lg:block w-64 flex-shrink-0">
             <div className="sticky top-20 space-y-6">
@@ -27,13 +40,6 @@ export const Sidebar = () => {
                         <Link to="/events" className="flex items-center text-gray-700 hover:text-brand-primary group">
                             <Activity className="h-5 w-5 mr-3 text-gray-400 group-hover:text-brand-primary" />
                             <span>Events</span>
-                        </Link>
-                        <Link to="/notifications" className="flex items-center text-gray-700 hover:text-brand-primary group">
-                            <div className="relative">
-                                <div className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full"></div>
-                                <Activity className="h-5 w-5 mr-3 text-gray-400 group-hover:text-brand-primary" />
-                            </div>
-                            <span>Notifications</span>
                         </Link>
                     </nav>
                 </div>
@@ -79,11 +85,11 @@ export const Sidebar = () => {
                     <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                             <span className="text-gray-600">OFA Records</span>
-                            <span className="font-medium text-brand-secondary">1,240</span>
+                            <span className="font-medium text-brand-secondary">{ofaRecordsCount.toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                             <span className="text-gray-600">VGL Profiles</span>
-                            <span className="font-medium text-brand-secondary">856</span>
+                            <span className="font-medium text-brand-secondary">{vglProfilesCount.toLocaleString()}</span>
                         </div>
                     </div>
                 </div>
