@@ -104,18 +104,36 @@ export const Login = () => {
                         </div>
 
                         <div className="mt-4">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    const url = import.meta.env.VITE_SUPABASE_URL;
-                                    const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
-                                    const apiUrl = import.meta.env.VITE_API_URL;
-                                    alert(`Debug Info:\nSupabase URL: ${url}\nAPI URL: ${apiUrl}\nKey Length: ${key?.length}`);
-                                }}
-                                className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary"
-                            >
-                                🐞 Show Debug Info
-                            </button>
+                            <div className="grid grid-cols-2 gap-2">
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        const apiUrl = import.meta.env.VITE_API_URL;
+                                        try {
+                                            const res = await fetch(`${apiUrl}/api/version`);
+                                            const text = await res.text();
+                                            alert(`Backend: ${res.status} ${res.statusText}\n${text.substring(0, 100)}`);
+                                        } catch (e: any) {
+                                            alert(`Backend Error: ${e.message}`);
+                                        }
+                                    }}
+                                    className="flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                                >
+                                    Test Backend
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const url = import.meta.env.VITE_SUPABASE_URL;
+                                        const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+                                        const apiUrl = import.meta.env.VITE_API_URL;
+                                        alert(`Debug Info:\nSupabase URL: ${url}\nAPI URL: ${apiUrl}\nKey Length: ${key?.length}`);
+                                    }}
+                                    className="flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                                >
+                                    Show Config
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </div>
