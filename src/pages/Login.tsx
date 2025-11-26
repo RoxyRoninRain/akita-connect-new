@@ -139,6 +139,22 @@ export const Login = () => {
                                 </button>
                                 <button
                                     type="button"
+                                    onClick={async () => {
+                                        const apiUrl = import.meta.env.VITE_API_URL;
+                                        try {
+                                            const res = await fetch(`${apiUrl}/api/auth/test`);
+                                            const text = await res.text();
+                                            alert(`Proxy Test: ${res.status} ${res.statusText}\n${text.substring(0, 150)}`);
+                                        } catch (e: any) {
+                                            alert(`Proxy Test Error: ${e.message}`);
+                                        }
+                                    }}
+                                    className="flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                                >
+                                    Test Proxy
+                                </button>
+                                <button
+                                    type="button"
                                     onClick={() => {
                                         const url = import.meta.env.VITE_SUPABASE_URL;
                                         const key = import.meta.env.VITE_SUPABASE_ANON_KEY;

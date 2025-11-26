@@ -15,6 +15,24 @@ if (!supabaseUrl || !supabaseKey) {
 // We use a local client here to ensure we have one even if db.ts is misconfigured
 const supabase = createClient(supabaseUrl!, supabaseKey!);
 
+router.get('/test', async (req, res) => {
+    try {
+        console.log('Testing Supabase connection from backend...');
+        const { count, error } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
+
+        if (error) {
+            console.error('Supabase connection test failed:', error);
+            return res.status(500).json({ error: error.message, details: error });
+        }
+
+        console.log('Supabase connection test successful. Count:', count);
+        res.json({ message: 'Backend-Supabase Connection OK', count });
+    } catch (error: any) {
+        console.error('Supabase connection test exception:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
