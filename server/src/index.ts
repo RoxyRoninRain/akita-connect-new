@@ -66,9 +66,9 @@ app.use('/api/auth', authRoutes);
 
 app.get('/api/version', (req: Request, res: Response) => {
     res.json({
-        version: '1.0.5',
+        version: '1.0.6',
         timestamp: new Date().toISOString(),
-        deployId: 'ts-node-direct-v1'
+        deployId: 'ts-node-final-fix'
     });
 });
 
