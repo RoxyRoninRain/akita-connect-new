@@ -1,14 +1,14 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { User, Akita, Litter, Post, Thread, Event, Reply, Notification, Puppy, UserBadge, AkitaBadge } from '../types';
-import { MOCK_POSTS, MOCK_THREADS } from './mockData';
-import { akitaApi, userApi, litterApi, threadApi, postApi, eventApi, notificationsApi, authApi } from '../api/client';
+import { akitaApi, userApi, litterApi, threadApi, postApi, eventApi, notificationsApi, authApi, followsApi } from '../api/client';
 import { mapAkitaFromDb, mapUserFromDb, mapLitterFromDb, mapAkitaToDb, mapLitterToDb, mapUserToDb, mapEventFromDb, mapEventToDb } from '../utils/mappers';
 import { supabase } from '../supabaseClient';
 
 interface StoreContextType {
     currentUser: User | null;
     users: User[];
+    following: string[]; // List of user IDs the current user is following
     akitas: Akita[];
     litters: Litter[];
     posts: Post[];
@@ -30,6 +30,7 @@ interface StoreContextType {
     toggleLike: (postId: string) => void;
     addComment: (postId: string, content: string) => void;
     updateUser: (id: string, updates: Partial<User>) => Promise<void>;
+    updateProfile: (updates: Partial<User>) => Promise<void>;
     addThreadReply: (threadId: string, content: string, images?: string[]) => void;
     addThread: (thread: Omit<Thread, 'id' | 'replies' | 'views' | 'lastActive' | 'likesCount' | 'userHasLiked' | 'isPinned'> & { images?: string[] }) => void;
     toggleThreadLike: (threadId: string) => void;
@@ -54,6 +55,10 @@ interface StoreContextType {
     requestAkitaBadge: (akitaId: string, badgeType: string, proofDocument?: string, notes?: string, dateEarned?: string) => Promise<void>;
     approveBadge: (badgeId: string, type: 'user' | 'akita') => Promise<void>;
     rejectBadge: (badgeId: string, type: 'user' | 'akita', reason: string) => Promise<void>;
+
+    // Follow Actions
+    followUser: (userId: string) => Promise<void>;
+    unfollowUser: (userId: string) => Promise<void>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -61,10 +66,11 @@ const StoreContext = createContext<StoreContextType | undefined>(undefined);
 export const StoreProvider = ({ children }: { children: ReactNode }) => {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [users, setUsers] = useState<User[]>([]);
+    const [following, setFollowing] = useState<string[]>([]);
     const [akitas, setAkitas] = useState<Akita[]>([]);
     const [litters, setLitters] = useState<Litter[]>([]);
-    const [posts, setPosts] = useState<Post[]>(MOCK_POSTS);
-    const [threads, setThreads] = useState<Thread[]>(MOCK_THREADS);
+    const [posts, setPosts] = useState<Post[]>([]);
+    const [threads, setThreads] = useState<Thread[]>([]);
     const [events, setEvents] = useState<Event[]>([]);
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [categories, setCategories] = useState<string[]>(['General', 'Health', 'Training', 'Breeding', 'Show Ring']);
@@ -168,6 +174,20 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
             subscription.unsubscribe();
         };
     }, []);
+
+    // Fetch following list when currentUser changes
+    useEffect(() => {
+        if (currentUser) {
+            followsApi.getFollowing(currentUser.id)
+                .then((data: any[]) => {
+                    const followingIds = data.map(f => f.following_id);
+                    setFollowing(followingIds);
+                })
+                .catch(err => console.error('Failed to fetch following list:', err));
+        } else {
+            setFollowing([]);
+        }
+    }, [currentUser?.id]);
 
     const login = async (email: string, password?: string) => {
         if (!password) throw new Error('Password required');
@@ -457,6 +477,11 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
             console.error("Failed to update user", error);
             throw error;
         }
+    };
+
+    const updateProfile = async (updates: Partial<User>) => {
+        if (!currentUser) return;
+        await updateUser(currentUser.id, updates);
     };
 
     const addThreadReply = async (threadId: string, content: string, images?: string[]) => {
@@ -818,6 +843,51 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    const followUser = async (userId: string) => {
+        if (!currentUser) return;
+        try {
+            await followsApi.follow(userId, currentUser.id);
+            setFollowing([...following, userId]);
+
+            // Optimistically update follower count in users list if needed
+            setUsers(users.map(u => {
+                if (u.id === userId) {
+                    return { ...u, followers_count: (u.followers_count || 0) + 1 };
+                }
+                if (u.id === currentUser.id) {
+                    return { ...u, following_count: (u.following_count || 0) + 1 };
+                }
+                return u;
+            }));
+
+        } catch (error) {
+            console.error('Failed to follow user:', error);
+            throw error;
+        }
+    };
+
+    const unfollowUser = async (userId: string) => {
+        if (!currentUser) return;
+        try {
+            await followsApi.unfollow(userId, currentUser.id);
+            setFollowing(following.filter(id => id !== userId));
+
+            // Optimistically update follower count
+            setUsers(users.map(u => {
+                if (u.id === userId) {
+                    return { ...u, followers_count: Math.max(0, (u.followers_count || 0) - 1) };
+                }
+                if (u.id === currentUser.id) {
+                    return { ...u, following_count: Math.max(0, (u.following_count || 0) - 1) };
+                }
+                return u;
+            }));
+        } catch (error) {
+            console.error('Failed to unfollow user:', error);
+            throw error;
+        }
+    };
+
     const unreadCount = notifications.filter(n => !n.read).length;
 
     return (
@@ -829,6 +899,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
             posts,
             threads,
             events,
+            following,
             login,
             logout,
             register,
@@ -841,6 +912,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
             toggleLike,
             addComment,
             updateUser,
+            updateProfile,
             addThreadReply,
             addThread,
             toggleThreadLike,
@@ -860,7 +932,9 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
             requestUserBadge,
             requestAkitaBadge,
             approveBadge,
-            rejectBadge
+            rejectBadge,
+            followUser,
+            unfollowUser
         }}>
             {children}
         </StoreContext.Provider>

@@ -15,19 +15,19 @@ if (!supabaseUrl || !supabaseServiceKey) {
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-const runMigration = async () => {
-    console.log('Running migration 016...');
-    const migrationPath = path.join(__dirname, '../migrations/016_setup_additional_storage.sql');
-    const sql = fs.readFileSync(migrationPath, 'utf8');
+const run = async () => {
+    console.log('Running migration...');
+    const sqlPath = path.join(__dirname, 'sql', '02_social_features.sql');
+    const sql = fs.readFileSync(sqlPath, 'utf8');
 
     const { error } = await supabase.rpc('exec_sql', { sql_query: sql });
 
     if (error) {
-        console.error('Failed to execute SQL via RPC:', error);
-        console.log('Please run the migration manually in the Supabase Dashboard SQL Editor.');
+        console.error('❌ Migration failed:', error);
+        console.log('If the error is "function exec_sql does not exist", you MUST run the SQL manually in the Supabase Dashboard.');
     } else {
-        console.log('Successfully executed migration 016!');
+        console.log('✅ Migration successful!');
     }
 };
 
-runMigration();
+run();

@@ -25,6 +25,11 @@ export interface User {
     following_count?: number;
     coverPhoto?: string;
     badges?: UserBadge[]; // User badges
+    notify_likes?: boolean;
+    notify_comments?: boolean;
+    notify_follows?: boolean;
+    show_email?: boolean;
+    show_phone?: boolean;
 }
 
 export type UserBadgeType = 'ACA Member' | 'Breeder of Merit' | 'Judge' | 'Heart Certified' | 'Rescue Volunteer' | 'Show Handler' | 'Therapy Dog Handler';

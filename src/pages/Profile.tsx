@@ -74,7 +74,6 @@ export const Profile = () => {
     const coverPhotoInputRef = useRef<HTMLInputElement>(null);
 
     // Following state
-    const [isFollowing, setIsFollowing] = useState(false);
     const [followersCount, setFollowersCount] = useState(0);
     const [followingCount, setFollowingCount] = useState(0);
 
@@ -95,26 +94,12 @@ export const Profile = () => {
     const profileId = id || currentUser?.id;
     const user = users.find(u => u.id === profileId);
 
-    // Check if current user is following this profile
+    // Update counts when user changes
     useEffect(() => {
         if (!user) return;
-
-        const checkFollowing = async () => {
-            if (currentUser && user.id !== currentUser.id) {
-                try {
-                    const response = await fetch(`http://localhost:3000/api/follows/${user.id}/is-following?followerId=${currentUser.id}`);
-                    const data = await response.json();
-                    setIsFollowing(data.isFollowing);
-                } catch (error) {
-                    console.error('Error checking follow status:', error);
-                }
-            }
-        };
-        checkFollowing();
         setFollowersCount(user.followers_count || 0);
         setFollowingCount(user.following_count || 0);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user?.id, currentUser]);
+    }, [user?.id, user?.followers_count, user?.following_count]);
 
     if (!user) {
         return <div className="text-center py-12">User not found</div>;
@@ -605,9 +590,7 @@ export const Profile = () => {
                                 <>
                                     <FollowButton
                                         userId={user.id}
-                                        initialIsFollowing={isFollowing}
                                         onToggle={(newIsFollowing) => {
-                                            setIsFollowing(newIsFollowing);
                                             setFollowersCount(prev => newIsFollowing ? prev + 1 : Math.max(0, prev - 1));
                                         }}
                                     />

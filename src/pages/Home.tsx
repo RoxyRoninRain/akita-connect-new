@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { CreatePost } from '../components/feed/CreatePost';
 
 export const Home = () => {
-    const { posts, currentUser, users, toggleLike, addComment } = useStore();
+    const { posts, currentUser, users, toggleLike, addComment, following } = useStore();
     const [activeCommentPostId, setActiveCommentPostId] = useState<string | null>(null);
     const [commentContent, setCommentContent] = useState('');
     const [copiedPostId, setCopiedPostId] = useState<string | null>(null);
@@ -70,14 +70,43 @@ export const Home = () => {
 
     const getUser = (id: string) => users.find(u => u.id === id);
 
+    const [activeTab, setActiveTab] = useState<'all' | 'following'>('all');
+
+    // Filter posts based on active tab
+    const displayedPosts = activeTab === 'all'
+        ? posts
+        : posts.filter(p => following.includes(p.authorId));
+
     return (
         <div className="max-w-3xl mx-auto">
+            {/* Feed Tabs */}
+            <div className="bg-white rounded-lg shadow mb-6 flex overflow-hidden">
+                <button
+                    onClick={() => setActiveTab('all')}
+                    className={`flex-1 py-3 text-sm font-medium text-center ${activeTab === 'all' ? 'bg-brand-primary text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+                >
+                    For You
+                </button>
+                <button
+                    onClick={() => setActiveTab('following')}
+                    className={`flex-1 py-3 text-sm font-medium text-center ${activeTab === 'following' ? 'bg-brand-primary text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+                >
+                    Following
+                </button>
+            </div>
+
             {/* Create Post */}
-            <CreatePost />
+            {activeTab === 'all' && <CreatePost />}
 
             {/* Feed */}
             <div className="space-y-6">
-                {posts.map(post => {
+                {activeTab === 'following' && displayedPosts.length === 0 && (
+                    <div className="text-center py-10 bg-white rounded-lg shadow">
+                        <p className="text-gray-500">You aren't following anyone yet, or they haven't posted.</p>
+                        <Link to="/directory" className="text-brand-primary hover:underline mt-2 inline-block">Find people to follow</Link>
+                    </div>
+                )}
+                {displayedPosts.map(post => {
                     const author = getUser(post.authorId);
                     if (!author) return null;
                     const isLiked = currentUser ? post.likes.includes(currentUser.id) : false;
@@ -191,6 +220,17 @@ export const Home = () => {
                     );
                 })}
             </div>
-        </div>
+
+
+            {/* Debug Info - Temporary */}
+            <div className="mt-8 p-4 bg-gray-100 rounded text-xs text-gray-500">
+                <p>Debug Info:</p>
+                <p>API Connected: {users.length > 0 ? 'Yes' : 'No/Loading'}</p>
+                <p>Users: {users.length}</p>
+                <p>Posts: {posts.length}</p>
+                <p>Current User: {currentUser ? currentUser.name : 'Not logged in'}</p>
+                <p>Following: {following.length}</p>
+            </div>
+        </div >
     );
 };

@@ -10,9 +10,9 @@ interface FollowButtonProps {
     className?: string;
 }
 
-export const FollowButton = ({ userId, initialIsFollowing = false, onToggle, className }: FollowButtonProps) => {
-    const { currentUser } = useStore();
-    const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
+export const FollowButton = ({ userId, onToggle, className }: FollowButtonProps) => {
+    const { currentUser, followUser, unfollowUser, following } = useStore();
+    const isFollowing = following?.includes(userId);
     const [loading, setLoading] = useState(false);
 
     const handleFollowToggle = async (e: React.MouseEvent) => {
@@ -24,20 +24,10 @@ export const FollowButton = ({ userId, initialIsFollowing = false, onToggle, cla
         setLoading(true);
         try {
             if (isFollowing) {
-                // Unfollow
-                await fetch(`http://localhost:3000/api/follows/${userId}?followerId=${currentUser.id}`, {
-                    method: 'DELETE'
-                });
-                setIsFollowing(false);
+                await unfollowUser(userId);
                 onToggle?.(false);
             } else {
-                // Follow
-                await fetch(`http://localhost:3000/api/follows/${userId}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ followerId: currentUser.id })
-                });
-                setIsFollowing(true);
+                await followUser(userId);
                 onToggle?.(true);
             }
         } catch (error) {

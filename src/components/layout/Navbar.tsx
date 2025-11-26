@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Search, Bell, MessageSquare, Menu, LogOut, X, Home, ShoppingBag, Users, Calendar, BookOpen, User } from 'lucide-react';
+import { Search, Bell, MessageSquare, Menu, LogOut, X, Home, ShoppingBag, Users, Calendar, BookOpen, User, Settings } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import { SearchResults } from '../SearchResults';
 
@@ -129,6 +129,26 @@ export const Navbar = () => {
                             </div>
                         </div>
 
+                        {/* Mobile Header Icons: Home, Profile, Notifications, Messages */}
+                        <div className="flex md:hidden items-center space-x-1">
+                            <Link to="/" className="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
+                                <Home className="h-6 w-6" />
+                            </Link>
+                            {currentUser && (
+                                <Link to="/profile" className="p-1 rounded-full text-gray-500 hover:bg-gray-100">
+                                    {currentUser.avatar ? (
+                                        <img
+                                            className="h-8 w-8 rounded-full object-cover border border-gray-200"
+                                            src={currentUser.avatar}
+                                            alt={currentUser.name}
+                                        />
+                                    ) : (
+                                        <User className="h-6 w-6" />
+                                    )}
+                                </Link>
+                            )}
+                        </div>
+
                         {/* Notification and Message buttons - visible on mobile and desktop */}
                         {currentUser && (
                             <>
@@ -170,6 +190,9 @@ export const Navbar = () => {
                                         src={currentUser.avatar || `https://ui-avatars.com/api/?name=${currentUser.name}&background=random`}
                                         alt={currentUser.name}
                                     />
+                                </Link>
+                                <Link to="/settings" className="text-gray-500 hover:text-gray-700">
+                                    <Settings className="h-5 w-5" />
                                 </Link>
                                 <button onClick={handleLogout} className="text-gray-500 hover:text-gray-700">
                                     <LogOut className="h-5 w-5" />
@@ -248,6 +271,7 @@ export const Navbar = () => {
                             {currentUser ? (
                                 <>
                                     <MobileMenuItem to="/profile" icon={User} label="My Profile" />
+                                    <MobileMenuItem to="/settings" icon={Settings} label="Settings" />
                                     {currentUser.role === 'moderator' && (
                                         <MobileMenuItem to="/moderator" icon={Users} label="Moderator Dashboard" />
                                     )}

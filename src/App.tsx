@@ -23,6 +23,7 @@ const ThreadDetail = React.lazy(() => import('./pages/ThreadDetail').then(module
 const ModeratorDashboard = React.lazy(() => import('./pages/ModeratorDashboard').then(module => ({ default: module.ModeratorDashboard })));
 const Landing = React.lazy(() => import('./pages/Landing').then(module => ({ default: module.Landing })));
 const Contact = React.lazy(() => import('./pages/Contact').then(module => ({ default: module.Contact })));
+const Settings = React.lazy(() => import('./pages/Settings').then(module => ({ default: module.Settings })));
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
               <Route path="messages" element={<Messages />} />
               <Route path="profile" element={<Profile />} />
               <Route path="profile/:id" element={<Profile />} />
+              <Route path="settings" element={<Settings />} />
               <Route path="akitas/:id" element={<AkitaDetail />} />
               <Route path="akitas" element={<Directory />} />
               <Route path="marketplace" element={<Marketplace />} />

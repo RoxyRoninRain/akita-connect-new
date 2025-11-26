@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { supabase } from '../supabaseClient';
 
-const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/api';
+const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3001') + '/api';
 
 export const api = axios.create({
     baseURL: API_URL,
@@ -103,4 +103,12 @@ export const marketplaceApi = {
         if (filters.status) params.append('status', filters.status);
         return api.get(`/marketplace?${params.toString()}`).then(res => res.data);
     },
+};
+
+export const followsApi = {
+    follow: (userId: string, followerId: string) => api.post(`/follows/${userId}`, { followerId }).then(res => res.data),
+    unfollow: (userId: string, followerId: string) => api.delete(`/follows/${userId}?followerId=${followerId}`).then(res => res.data),
+    getFollowers: (userId: string) => api.get(`/follows/${userId}/followers`).then(res => res.data),
+    getFollowing: (userId: string) => api.get(`/follows/${userId}/following`).then(res => res.data),
+    isFollowing: (userId: string, followerId: string) => api.get(`/follows/${userId}/is-following?followerId=${followerId}`).then(res => res.data),
 };
