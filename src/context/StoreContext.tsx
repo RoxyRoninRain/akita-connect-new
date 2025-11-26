@@ -192,56 +192,66 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     const login = async (email: string, password?: string) => {
         if (!password) throw new Error('Password required');
         console.log('🔵 login called with:', email);
-        try {
-            console.log('🔵 calling signInWithPassword...');
-            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-            console.log('🔵 signInWithPassword returned');
-            if (error) {
-                console.error('❌ Login error:', error.message);
-                throw error;
-            }
 
-            if (data.user) {
-                console.log('✅ Login successful, fetching profile for:', data.user.email);
-                // Fetch user profile
-                let userProfile = await userApi.getById(data.user.id).catch((err) => {
-                    console.error('❌ Failed to fetch profile after login:', err);
-                    return null;
-                });
-
-                if (!userProfile) {
-                    console.warn('⚠️ Profile not found for user, attempting to create one...', data.user.id);
-                    try {
-                        const newProfile = {
-                            id: data.user.id,
-                            email: data.user.email,
-                            name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',
-                            avatar: data.user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${data.user.email?.split('@')[0]}&background=random`,
-                            role: 'user',
-                            joined_date: new Date().toISOString()
-                        };
-
-                        const createdProfile = await userApi.create(newProfile);
-                        if (createdProfile) {
-                            console.log('✅ Profile created successfully during login fallback');
-                            userProfile = createdProfile;
-                        } else {
-                            throw new Error('Failed to create profile during fallback');
-                        }
-                    } catch (createError) {
-                        console.error('❌ Critical Error: Failed to create profile fallback:', createError);
-                        throw new Error('User profile not found and could not be created. Please contact support.');
-                    }
+        const loginPromise = async () => {
+            try {
+                console.log('🔵 calling signInWithPassword...');
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                console.log('🔵 signInWithPassword returned');
+                if (error) {
+                    console.error('❌ Login error:', error.message);
+                    throw error;
                 }
 
-                const mappedUser = mapUserFromDb(userProfile);
-                setCurrentUser(mappedUser);
-                console.log('✅ currentUser set manually in login');
+                if (data.user) {
+                    console.log('✅ Login successful, fetching profile for:', data.user.email);
+                    // Fetch user profile
+                    let userProfile = await userApi.getById(data.user.id).catch((err) => {
+                        console.error('❌ Failed to fetch profile after login:', err);
+                        return null;
+                    });
+
+                    if (!userProfile) {
+                        console.warn('⚠️ Profile not found for user, attempting to create one...', data.user.id);
+                        try {
+                            const newProfile = {
+                                id: data.user.id,
+                                email: data.user.email,
+                                name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',
+                                avatar: data.user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${data.user.email?.split('@')[0]}&background=random`,
+                                role: 'user',
+                                joined_date: new Date().toISOString()
+                            };
+
+                            const createdProfile = await userApi.create(newProfile);
+                            if (createdProfile) {
+                                console.log('✅ Profile created successfully during login fallback');
+                                userProfile = createdProfile;
+                            } else {
+                                throw new Error('Failed to create profile during fallback');
+                            }
+                        } catch (createError) {
+                            console.error('❌ Critical Error: Failed to create profile fallback:', createError);
+                            throw new Error('User profile not found and could not be created. Please contact support.');
+                        }
+                    }
+
+                    const mappedUser = mapUserFromDb(userProfile);
+                    setCurrentUser(mappedUser);
+                    console.log('✅ currentUser set manually in login');
+                }
+            } catch (err) {
+                console.error('❌ Login failed:', err);
+                throw err;
             }
-        } catch (err) {
-            console.error('❌ Login failed:', err);
-            throw err;
-        }
+        };
+
+        // Race between login logic and a 10s timeout
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Login timed out after 10 seconds. Please check your connection.')), 10000);
+        });
+
+        await Promise.race([loginPromise(), timeoutPromise]);
     };
 
     const logout = async () => {
