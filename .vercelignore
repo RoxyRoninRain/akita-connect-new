@@ -1,6 +1,8 @@
 # Exclude backend server code from Vercel builds
 server/
 server/**/*
+api/
+api/**/*
 
 # Test files
 *.test.js
