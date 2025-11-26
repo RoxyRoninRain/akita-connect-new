@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../context/StoreContext';
+import { supabase } from '../supabaseClient';
 import { Dog } from 'lucide-react';
 
 export const Login = () => {
@@ -120,6 +121,21 @@ export const Login = () => {
                                     className="flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                                 >
                                     Test Backend
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        try {
+                                            const { count, error } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
+                                            if (error) throw error;
+                                            alert(`Supabase: Connected! Count: ${count}`);
+                                        } catch (e: any) {
+                                            alert(`Supabase Error: ${e.message}`);
+                                        }
+                                    }}
+                                    className="flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                                >
+                                    Test Supabase
                                 </button>
                                 <button
                                     type="button"
