@@ -15,6 +15,32 @@ if (!supabaseUrl || !supabaseKey) {
 // We use a local client here to ensure we have one even if db.ts is misconfigured
 const supabase = createClient(supabaseUrl!, supabaseKey!);
 
+router.post('/login', async (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    try {
+        console.log('Logging in user:', email);
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        });
+
+        if (error) {
+            console.error('Supabase login error:', error);
+            return res.status(401).json({ error: error.message });
+        }
+
+        res.json({ user: data.user, session: data.session });
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 router.post('/register', async (req, res) => {
     const { email, password, name: providedName, avatar: providedAvatar } = req.body;
 

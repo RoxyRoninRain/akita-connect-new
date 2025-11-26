@@ -22,6 +22,7 @@ api.interceptors.request.use(async (config) => {
 
 export const authApi = {
     register: (data: any) => api.post('/auth/register', data).then(res => res.data),
+    login: (data: any) => api.post('/auth/login', data).then(res => res.data),
 };
 
 export const akitaApi = {

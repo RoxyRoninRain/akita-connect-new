@@ -195,60 +195,67 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
 
         const loginPromise = async () => {
             try {
-                console.log('🔵 calling signInWithPassword...');
-                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-                console.log('🔵 signInWithPassword returned');
-                if (error) {
-                    console.error('❌ Login error:', error.message);
-                    throw error;
+                console.log('🔵 calling authApi.login (Server-Side Proxy)...');
+                // Use backend proxy instead of direct Supabase call
+                const { user, session } = await authApi.login({ email, password });
+                console.log('🔵 authApi.login returned');
+
+                if (!user || !session) {
+                    throw new Error('Login failed: No user or session returned from server');
                 }
 
-                if (data.user) {
-                    console.log('✅ Login successful, fetching profile for:', data.user.email);
-                    // Fetch user profile
-                    let userProfile = await userApi.getById(data.user.id).catch((err) => {
-                        console.error('❌ Failed to fetch profile after login:', err);
-                        return null;
-                    });
+                // Manually set the session on the client so RLS and other Supabase calls work
+                const { error: sessionError } = await supabase.auth.setSession(session);
+                if (sessionError) {
+                    console.error('❌ Failed to set client session:', sessionError);
+                    // Continue anyway as we have the user object, but warn
+                }
 
-                    if (!userProfile) {
-                        console.warn('⚠️ Profile not found for user, attempting to create one...', data.user.id);
-                        try {
-                            const newProfile = {
-                                id: data.user.id,
-                                email: data.user.email,
-                                name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',
-                                avatar: data.user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${data.user.email?.split('@')[0]}&background=random`,
-                                role: 'user',
-                                joined_date: new Date().toISOString()
-                            };
+                console.log('✅ Login successful, fetching profile for:', user.email);
+                // Fetch user profile
+                let userProfile = await userApi.getById(user.id).catch((err) => {
+                    console.error('❌ Failed to fetch profile after login:', err);
+                    return null;
+                });
 
-                            const createdProfile = await userApi.create(newProfile);
-                            if (createdProfile) {
-                                console.log('✅ Profile created successfully during login fallback');
-                                userProfile = createdProfile;
-                            } else {
-                                throw new Error('Failed to create profile during fallback');
-                            }
-                        } catch (createError) {
-                            console.error('❌ Critical Error: Failed to create profile fallback:', createError);
-                            throw new Error('User profile not found and could not be created. Please contact support.');
+                if (!userProfile) {
+                    console.warn('⚠️ Profile not found for user, attempting to create one...', user.id);
+                    try {
+                        const newProfile = {
+                            id: user.id,
+                            email: user.email,
+                            name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+                            avatar: user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${user.email?.split('@')[0]}&background=random`,
+                            role: 'user',
+                            joined_date: new Date().toISOString()
+                        };
+
+                        const createdProfile = await userApi.create(newProfile);
+                        if (createdProfile) {
+                            console.log('✅ Profile created successfully during login fallback');
+                            userProfile = createdProfile;
+                        } else {
+                            throw new Error('Failed to create profile during fallback');
                         }
+                    } catch (createError) {
+                        console.error('❌ Critical Error: Failed to create profile fallback:', createError);
+                        throw new Error('User profile not found and could not be created. Please contact support.');
                     }
-
-                    const mappedUser = mapUserFromDb(userProfile);
-                    setCurrentUser(mappedUser);
-                    console.log('✅ currentUser set manually in login');
                 }
+
+                const mappedUser = mapUserFromDb(userProfile);
+                setCurrentUser(mappedUser);
+                console.log('✅ currentUser set manually in login');
+
             } catch (err) {
                 console.error('❌ Login failed:', err);
                 throw err;
             }
         };
 
-        // Race between login logic and a 10s timeout
+        // Race between login logic and a 15s timeout (increased for backend hop)
         const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Login timed out after 10 seconds. Please check your connection.')), 10000);
+            setTimeout(() => reject(new Error('Login timed out after 15 seconds. Please check your connection.')), 15000);
         });
 
         await Promise.race([loginPromise(), timeoutPromise]);
