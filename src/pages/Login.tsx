@@ -109,7 +109,8 @@ export const Login = () => {
                                 onClick={() => {
                                     const url = import.meta.env.VITE_SUPABASE_URL;
                                     const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
-                                    alert(`Debug Info:\nURL: ${url}\nKey Length: ${key?.length}\nKey Start: ${key?.substring(0, 10)}...`);
+                                    const apiUrl = import.meta.env.VITE_API_URL;
+                                    alert(`Debug Info:\nSupabase URL: ${url}\nAPI URL: ${apiUrl}\nKey Length: ${key?.length}`);
                                 }}
                                 className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary"
                             >
